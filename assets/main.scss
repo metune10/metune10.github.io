@@ -172,3 +172,8 @@ a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* Hide the default Minima RSS subscription link in the footer. */
+.rss-subscribe {
+  display: none !important;
+}
