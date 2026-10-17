@@ -1,6 +1,6 @@
 ---
-layout: home
-title: "Security Research"
+layout: default
+title: Security Research
 ---
 
 # Security Research
