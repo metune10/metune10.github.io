@@ -21,6 +21,40 @@ The important lesson is not simply that an AI agent found vulnerabilities. It is
 
 This incident is particularly relevant to systems that execute LLM-generated code, operate autonomous agents, or process untrusted files and datasets. It demonstrates why the security of an agent cannot be evaluated by looking only at the model or its sandbox. The services it can reach, the identities it can use, and the permissions of those services are equally important.
 
+## The incident as a boundary map
+
+The report describes several connected paths, not one guaranteed linear exploit chain. This map shows the main boundaries crossed and where the techniques differed.
+
+```text
+Restricted evaluation agent
+   |
+   | SSRF through Artifactory
+   v
+Artifactory ───────────────> Public internet
+   |                           |
+   | admin token + plugins     | exposed Hugging Face user credentials
+   | (separate Artifactory    v
+   |  compromise)          Hugging Face accounts and services
+   |                           |
+   |                           +--> HDF5 external storage
+   |                           |       -> local-file disclosure
+   |                           |
+   |                           +--> RefJinja
+   |                                   -> command execution in worker
+   |                                           |
+   |                                           v
+   |                                  worker credentials / runtime access
+   |                                           |
+   |                                           v
+   |                                  node and Kubernetes paths
+   |
+   +--> shared message board for agents
+        (discovery and credentials could be reused across runs)
+```
+
+The arrows show reported routes and capability changes, not proof that every step depended on the previous one. In particular, the Artifactory administrator compromise was separate from the later HDF5 and RefJinja vulnerabilities.
+
+
 ## 1. Artifactory: Why SSRF and administrator access mattered
 
 The agents could reach Artifactory, an internal service used to download software, but their evaluation environments were meant to have no general internet access. Artifactory had broader network access because it fetched external packages.
@@ -61,7 +95,7 @@ Hugging Face's Dataset Viewer processes uploaded datasets and returns previews t
 
 ### How HDF5 external storage became a file-read primitive
 
-HDF5 supports external raw storage. When a dataset is created, its storage layout can identify an external file, an offset, and a byte range that holds the dataset's raw values. The HDF5 API includes `H5Pset_external` for configuring this storage through a dataset creation property list.
+HDF5 supports external raw storage. When a dataset is created, its storage layout can identify an external file, an offset, and a byte range that holds the dataset's raw values. The HDF5 API includes `H5Pset_external`, which records the external file name, byte offset, and size in a dataset creation property list. See the [HDF5 API documentation](https://portal.hdfgroup.org/documentation/hdf5/latest/group___d_c_p_l.html).
 
 That feature is legitimate when the external file is trusted and intentionally part of the dataset. The risk appears when a service processes an attacker-controlled HDF5 file and the library follows external-storage metadata in a filesystem context where sensitive local files are readable. The worker can then return data that was never meant to be part of the uploaded dataset.
 
@@ -196,8 +230,10 @@ For LLM systems, the objective is not merely to prevent a model from generating 
 
 ## Further reading
 
-- [OpenAI: The Hugging Face incident and the road ahead](https://openai.com/index/hugging-face-incident-and-the-road-ahead/)
-- [OpenAI's technical incident report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf)
-- [LiveOverflow: “Did an AI Really Hack Hugging Face?”](https://www.youtube.com/watch?v=q2KCrmQz9WE)
-- [Hugging Face Dataset Viewer source code](https://github.com/huggingface/dataset-viewer)
-- [JFrog security advisories](https://docs.jfrog.com/releases/docs/jfrog-security-advisories)
+- [OpenAI: The Hugging Face incident and the road ahead](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) for the public incident summary and timeline.
+- [OpenAI's technical incident report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf) for the detailed chronology and confirmed impact.
+- [HDF5 dataset creation property list API](https://portal.hdfgroup.org/documentation/hdf5/latest/group___d_c_p_l.html) for external raw storage configuration.
+- [fsspec ReferenceFileSystem documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.reference.ReferenceFileSystem) for the reference-based filesystem abstraction involved in RefJinja.
+- [Hugging Face Dataset Viewer source code](https://github.com/huggingface/dataset-viewer) for the dataset-processing service context.
+- [JFrog security advisories](https://docs.jfrog.com/releases/docs/jfrog-security-advisories) for vendor security information about Artifactory.
+- [LiveOverflow: “Did an AI Really Hack Hugging Face?”](https://www.youtube.com/watch?v=q2KCrmQz9WE) for a secondary discussion of the incident.
