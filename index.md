@@ -28,13 +28,3 @@ I investigate how vulnerabilities work, what an attacker can actually achieve, a
     <p>Workload identity, credentials, least privilege, container isolation, and Kubernetes security boundaries.</p>
   </section>
 </div>
-
-## Approach
-
-- **Evidence first:** Separate confirmed behavior from assumptions and open questions.
-- **Impact over labels:** Explain what an issue enables, under which privileges, and with what limitations.
-- **Defense in depth:** Evaluate application, identity, network, workload, and infrastructure controls independently.
-
----
-
-Browse the latest investigations below. Each article aims to connect technical details to practical security engineering decisions.
