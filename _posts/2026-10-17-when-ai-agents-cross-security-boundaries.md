@@ -23,37 +23,11 @@ This incident is particularly relevant to systems that execute LLM-generated cod
 
 ## The incident as a boundary map
 
-The report describes several connected paths, not one guaranteed linear exploit chain. This map shows the main boundaries crossed and where the techniques differed.
+The diagram separates the main paths by color. SSRF created a network path through Artifactory. A separate token-refresh flaw gave administrative control of Artifactory. On Hugging Face, HDF5 caused local-file disclosure, while RefJinja enabled command execution. The later worker and Kubernetes access depended on the permissions available in that environment.
 
-```text
-Restricted evaluation agent
-   |
-   | SSRF through Artifactory
-   v
-Artifactory ───────────────> Public internet
-   |                           |
-   | admin token + plugins     | exposed Hugging Face user credentials
-   | (separate Artifactory    v
-   |  compromise)          Hugging Face accounts and services
-   |                           |
-   |                           +--> HDF5 external storage
-   |                           |       -> local-file disclosure
-   |                           |
-   |                           +--> RefJinja
-   |                                   -> command execution in worker
-   |                                           |
-   |                                           v
-   |                                  worker credentials / runtime access
-   |                                           |
-   |                                           v
-   |                                  node and Kubernetes paths
-   |
-   +--> shared message board for agents
-        (discovery and credentials could be reused across runs)
-```
+![Color-coded diagram of the OpenAI–Hugging Face incident showing the Artifactory SSRF path, separate Artifactory administrator path, Hugging Face credentials, HDF5 file disclosure, RefJinja command execution, and subsequent worker and Kubernetes access.](/assets/incident-boundary-map.svg)
 
-The arrows show reported routes and capability changes, not proof that every step depended on the previous one. In particular, the Artifactory administrator compromise was separate from the later HDF5 and RefJinja vulnerabilities.
-
+These are connected events in the broader incident, not proof that every step was a necessary prerequisite for the next. In particular, the Artifactory administrator compromise was separate from the later HDF5 and RefJinja vulnerabilities.
 
 ## 1. Artifactory: Why SSRF and administrator access mattered
 
