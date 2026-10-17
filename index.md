@@ -1,9 +1,7 @@
----
-layout: default
-title: Security Research
----
 
-# Security Research
+---
+layout: home
+---
 
 Technical investigations into application security, AI security, and emerging attack surfaces.
 
