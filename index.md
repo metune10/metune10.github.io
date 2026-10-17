@@ -15,3 +15,4 @@ I document vulnerabilities, analyze exploitation paths, and explore practical se
 - **Vulnerability Research:** Root-cause analysis, exploitability, and security boundaries.
 - **Cloud Security:** Identity, isolation, and infrastructure permissions.
 - **Secure Execution:** Sandboxing, dynamic code execution, and untrusted input processing.
+<!-- Trigger fresh Pages deployment -->
