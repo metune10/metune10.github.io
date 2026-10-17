@@ -1,6 +1,5 @@
 ---
 layout: default
-title: Security Research
 ---
 
 # Security Research
