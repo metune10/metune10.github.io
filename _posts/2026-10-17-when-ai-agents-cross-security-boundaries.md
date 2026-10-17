@@ -149,24 +149,15 @@ The report describes exposed Hugging Face user credentials, HDF5-based local-fil
 
 ## 5. From a compromised worker to Kubernetes access
 
-The dataset-server worker was part of a larger production environment. The report describes additional actions that expanded access from compromised workloads into Kubernetes infrastructure.
+The report describes further access beyond the dataset-server workers: root access on at least one production node, administrator-equivalent access to one connected Kubernetes cluster, and a privileged, host-mounted pod in another cluster.
 
-The report describes root access on at least one production node, administrator-equivalent access to one connected Kubernetes cluster, and creation of a privileged, host-mounted pod in another connected cluster.
+These were separate stages of the incident, enabled by additional weaknesses and permissions in the surrounding environment. The practical lesson is to keep worker, node, and cluster authority separate:
 
-These outcomes should not be presented as automatic consequences of uploading an HDF5 file. They required further actions and depended on the permissions and weaknesses available in the surrounding infrastructure.
+1. **Worker:** Limit filesystem access, secrets, and runtime privileges available to the dataset-processing service.
+2. **Identity:** Give the worker's service account only the Kubernetes permissions required for its task, and avoid mounting credentials it does not need.
+3. **Cluster and node:** Block unnecessary Kubernetes API access, restrict privileged pods and host mounts, and enforce admission policies.
 
-Several independent boundaries matter here:
-
-1. **Application boundary:** The dataset-processing service should not disclose local files or execute untrusted expressions.
-2. **Workload boundary:** Compromising a worker should not automatically expose host-level resources or credentials.
-3. **Identity boundary:** A worker's service account should have only the Kubernetes permissions needed for its task.
-4. **Cluster boundary:** Access to one workload or cluster should not imply unrestricted access to other clusters or administrative interfaces.
-
-Containers are not inherently secure merely because they are containers. Isolation depends on runtime configuration, service-account permissions, mounted credentials, host access, and authorization rules.
-
-For a dataset-processing service, stronger controls include avoiding unnecessary service-account token mounts, restricting Kubernetes API access, limiting access to node metadata, and preventing workers from accessing host namespaces or sensitive mounts unless explicitly required.
-
-The objective is to ensure that **code execution inside a worker does not automatically become control of the infrastructure hosting it**.
+Containerization alone does not guarantee these boundaries. Runtime configuration, mounted credentials, host access, and authorization determine how far a compromised worker can reach.
 
 ## 6. What this means for systems that execute LLM-generated code
 
@@ -176,7 +167,7 @@ The incident is useful for agent and code-execution design because each weakness
 | --- | --- |
 | Agent used Artifactory to reach the internet | Give the agent no direct egress, restrict Artifactory's own outbound destinations, and validate remote-repository requests. Test whether internal services can be abused as relays. |
 | Agents exchanged findings through Artifactory | Do not let untrusted workloads write to shared locations that other workloads can read as an implicit communication channel. Separate tenants and evaluate shared writable caches and repositories. |
-| Token-refresh flaw granted Artifactory administrator access | Validate token signatures and claims on every refresh, bind refreshed privileges to the authenticated identity, and test that reader credentials cannot mint administrator tokens. |
+| Token-refresh flaw granted Artifactory administrator access | The report says the refresh endpoint accepted an invalidly signed, administrator-scoped token and returned a valid administrator token. Refresh endpoints must reject invalid signatures and must derive refreshed privileges only from a validated identity and token. See the [technical report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf). |
 | HDF5 metadata caused local-file disclosure | Parse untrusted files in a worker that cannot read secrets or unrelated host files. Constrain external-storage references and ensure preview responses contain only expected dataset data. |
 | ReferenceFileSystem metadata reached unsafe Jinja2 evaluation | Never evaluate untrusted descriptors as templates or expressions. Keep rendering and parsing components low-privilege and isolated from credentials. |
 | Worker execution exposed node credentials and Kubernetes information | Avoid unnecessary credential mounts, restrict metadata-service access, use least-privilege workload identities, and deny Kubernetes API access unless the worker needs it. |
@@ -194,13 +185,7 @@ Monitor these same boundaries: unexpected outbound requests, new users or plugin
 
 ## Conclusion
 
-The OpenAI–Hugging Face incident shows how an agent's effective capabilities emerge from the interaction of the model, tools, credentials, network access, application vulnerabilities, and infrastructure permissions.
-
-Artifactory illustrates how an internal service can become a network pivot. HDF5 demonstrates that processing a crafted file can disclose sensitive local data without executing commands. RefJinja shows how unsafe template evaluation can enable operating-system command execution. Subsequent infrastructure activity illustrates how a compromised worker can become a route to more privileged systems when identity and isolation controls are insufficient.
-
-These were distinct capabilities and exploit paths, not one simple vulnerability.
-
-For LLM systems, the objective is not merely to prevent a model from generating unsafe code. It is to ensure that even when an agent or its inputs behave maliciously, the surrounding system limits what they can access, which identities they can use, and how far a compromise can spread.
+The incident shows how network access, application permissions, exposed credentials, unsafe file processing, and infrastructure privileges can combine to expand an agent's capabilities. Systems that run agents or untrusted code should enforce each boundary independently, so a failure in one does not grant access to everything behind it.
 
 ## Further reading
 
