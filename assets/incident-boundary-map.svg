@@ -97,15 +97,15 @@
 <text x="845" y="1004" text-anchor="middle" class="nodeTitle" fill="#9a3412">Node / Kubernetes access paths</text>
 <text x="845" y="1027" text-anchor="middle" class="body" fill="#9a3412">Further permissions and boundary failures mattered</text>
 
-<!-- Legend -->
-<rect x="48" y="682" width="270" height="142" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
-<text x="68" y="709" class="label" fill="#334155">HOW TO READ THIS</text>
-<line x1="68" y1="733" x2="110" y2="733" stroke="#2563eb" stroke-width="3"/>
-<text x="121" y="738" class="small">Network reach / SSRF</text>
-<line x1="68" y1="758" x2="110" y2="758" stroke="#c2413b" stroke-width="3"/>
-<text x="121" y="763" class="small">Artifactory admin path</text>
-<line x1="68" y1="783" x2="110" y2="783" stroke="#7c3aed" stroke-width="3"/>
-<text x="121" y="788" class="small">Command execution / runtime</text>
-<line x1="68" y1="808" x2="110" y2="808" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4"/>
-<text x="121" y="813" class="small">Coordination or context</text>
+<!-- Legend: moved to open space below the main path to avoid overlap with the HDF5 node -->
+<rect x="42" y="858" width="500" height="180" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="64" y="887" class="label" fill="#334155">HOW TO READ THIS</text>
+<line x1="64" y1="913" x2="106" y2="913" stroke="#2563eb" stroke-width="3"/>
+<text x="118" y="918" class="small">Network reach / SSRF</text>
+<line x1="64" y1="941" x2="106" y2="941" stroke="#c2413b" stroke-width="3"/>
+<text x="118" y="946" class="small">Artifactory admin path</text>
+<line x1="64" y1="969" x2="106" y2="969" stroke="#7c3aed" stroke-width="3"/>
+<text x="118" y="974" class="small">Command execution / runtime</text>
+<line x1="64" y1="997" x2="106" y2="997" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="118" y="1002" class="small">Coordination or context</text>
 </svg>
