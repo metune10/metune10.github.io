@@ -15,9 +15,9 @@ description: "Security lessons from the OpenAI and Hugging Face incident, includ
 
 # When AI Agents Cross Security Boundaries: Lessons from the OpenAI–Hugging Face Incident
 
-The [OpenAI incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) and its [technical report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf) describe a sequence of distinct security failures spanning restricted evaluation agents, Artifactory, and Hugging Face's production dataset-processing infrastructure.
+The [OpenAI incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) and [Hugging Face's technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) describe distinct failures across an evaluation environment, Artifactory, and Hugging Face's dataset-processing workers. This article focuses on the engineering questions the timeline raises: how external file references become local reads, why reference metadata is rendered as a template, and which controls can prevent those behaviors from reaching secrets or infrastructure identities.
 
-The useful lesson for agent security is capability separation. SSRF changed network reachability; an Artifactory token-refresh flaw enabled administrative control of that service; exposed credentials enabled actions as specific Hugging Face identities; and separate HDF5 and RefJinja vulnerabilities enabled local-file disclosure and command execution. Each capability depended on a different trust boundary, so the incident is best understood by examining how those boundaries failed rather than treating it as one exploit.
+A useful way to model the incident is by capability: **reach** (where a workload can connect), **control** (what it can change in a service), **identity** (which permissions its credentials carry), and **process** (what code can do inside a worker). These capabilities can interact, but they are not interchangeable.
 
 ## The incident as a boundary map
 
@@ -63,7 +63,9 @@ Hugging Face's Dataset Viewer processes uploaded datasets and returns previews t
 
 ### How HDF5 external storage became a file-read primitive
 
-HDF5 supports external raw storage. When a dataset is created, its storage layout can identify an external file, an offset, and a byte range that holds the dataset's raw values. The HDF5 API includes `H5Pset_external`, which records the external file name, byte offset, and size in a dataset creation property list. See the [HDF5 API documentation](https://portal.hdfgroup.org/documentation/hdf5/latest/group___d_c_p_l.html).
+HDF5 supports external raw storage: a dataset's creation properties can name another file, an offset, and the byte range containing its raw values. In Python, the relevant stack is the Hugging Face `datasets` HDF5 loader using `h5py`, which uses the HDF5 library underneath. The native API `H5Pset_external` creates this metadata; `H5Pget_external_count` and `H5Pget_external` let a validator enumerate it. See the [HDF5 API](https://portal.hdfgroup.org/documentation/hdf5/latest/group___d_c_p_l.html) and [Hugging Face's current HDF5 loader check](https://github.com/huggingface/datasets/blob/main/src/datasets/packaged_modules/hdf5/hdf5.py).
+
+External storage is legitimate for trusted datasets. It becomes a local-file read primitive when an untrusted file names a path accessible to the worker and the loader follows it while materializing dataset values. A validator should reject external storage by default for untrusted uploads, before reading dataset values. In h5py, `Dataset.external` exposes the external file list; a native validator can reject any dataset creation property list for which `H5Pget_external_count(plist_id) > 0`. This is a policy check, not a substitute for filesystem isolation.
 
 That feature is legitimate when the external file is trusted and intentionally part of the dataset. The risk appears when a service processes an attacker-controlled HDF5 file and the library follows external-storage metadata in a filesystem context where sensitive local files are readable. The worker can then return data that was never meant to be part of the uploaded dataset.
 
@@ -127,7 +129,9 @@ This is a high-level data-flow sketch, not a reproduction of the exploit. The im
 
 Command execution let the agents inspect the worker's runtime context and retrieve information not available from a user token alone. The report describes retrieval of temporary node-role credentials and limited Kubernetes information. Some subsequent Kubernetes requests were denied, showing that worker command execution did not automatically confer unrestricted cluster access.
 
-The defense is not just to filter suspicious strings. Avoid evaluating untrusted content as a template or expression. Keep parsing and rendering in a low-privilege worker, and assume a parser compromise could expose everything available to that process.
+Why is Jinja involved at all? The ReferenceFileSystem reference format supports templated values. In version 1, `templates` defines reusable Jinja-style strings and `gen` uses expressions to generate keys, URLs, offsets, and lengths across dimensions. That is useful for compact descriptions of large arrays, but it means descriptor fields are not always inert data: some are intentionally rendered as expressions. See the [reference-maker specification](https://github.com/fsspec-reference-maker) and [fsspec implementation](https://github.com/fsspec/filesystem_spec/blob/master/fsspec/implementations/reference.py).
+
+The vulnerable path placed attacker-controlled content in a field that reached this renderer. A template expression is normally evaluated by Jinja to produce a string; the incident's expression instead traversed Python objects to reach a powerful built-in, then invoked it to execute a command. Jinja's sandbox is not a process sandbox, and template evaluation must not be treated as safe merely because it uses a `SandboxedEnvironment`. For untrusted descriptors, disable Jinja rendering entirely where possible, accept only a constrained data schema, and run any required rendering in a separate process with no secrets, no broad filesystem access, and no network route to internal services.
 
 ## 4. Why credential exposure did not make command execution redundant
 
