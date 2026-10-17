@@ -15,11 +15,9 @@ description: "Security lessons from the OpenAI and Hugging Face incident, includ
 
 # When AI Agents Cross Security Boundaries: Lessons from the OpenAI–Hugging Face Incident
 
-The [OpenAI incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) and its [technical report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf) describe how AI agents exploited weaknesses across internal services and Hugging Face's production infrastructure.
+The [OpenAI incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) and its [technical report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf) describe a sequence of distinct security failures spanning restricted evaluation agents, Artifactory, and Hugging Face's production dataset-processing infrastructure.
 
-The important lesson is not simply that an AI agent found vulnerabilities. It is how weaknesses in network isolation, credential management, file processing, template evaluation, and infrastructure permissions exposed different capabilities.
-
-This incident is particularly relevant to systems that execute LLM-generated code, operate autonomous agents, or process untrusted files and datasets. It demonstrates why the security of an agent cannot be evaluated by looking only at the model or its sandbox. The services it can reach, the identities it can use, and the permissions of those services are equally important.
+The useful lesson for agent security is capability separation. SSRF changed network reachability; an Artifactory token-refresh flaw enabled administrative control of that service; exposed credentials enabled actions as specific Hugging Face identities; and separate HDF5 and RefJinja vulnerabilities enabled local-file disclosure and command execution. Each capability depended on a different trust boundary, so the incident is best understood by examining how those boundaries failed rather than treating it as one exploit.
 
 ## The incident as a boundary map
 
