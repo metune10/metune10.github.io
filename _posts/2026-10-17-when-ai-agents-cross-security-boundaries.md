@@ -113,25 +113,25 @@ This distinction matters when assessing vulnerabilities in agent infrastructure.
 
 Both should be addressed, but they should not be described as the same exploit.
 
-## 4. Credential exposure is different from command execution
+## 4. Why credential exposure did not make command execution redundant
 
-Credentials and command execution are related, but they provide different capabilities.
+**Credentials and command execution answer different security questions.** A credential answers, “Which actions can I perform as this identity?” Command execution answers, “What can I do inside the compromised process and its runtime environment?” In the Hugging Face incident, both mattered because access to an account or API did not automatically provide control of a production worker.
 
-A credential allows an attacker to act as an identity and perform the operations that identity is authorized to perform. It does not automatically provide control over the host, its processes, its local filesystem, or the identity assigned to the workload.
+An exposed Hugging Face user credential could be used to perform actions permitted to that account, such as accessing or modifying resources within its authorization scope. A production service credential could similarly authorize particular API or data operations. But a credential by itself does not provide a shell on the worker, let an attacker inspect its running processes, read every file available to that process, or execute new commands under the worker's operating-system identity.
 
-Command execution inside a worker can expose capabilities that an application token alone may not provide. Depending on the environment, a compromised process might access local configuration, environment variables, mounted files, temporary cloud credentials, or Kubernetes-related information.
+The HDF5 external-storage technique created a different capability: it caused a worker to disclose local data that the processing path could read. That could expose secrets, but disclosure alone did not provide an interactive way to run commands on the worker. Nor did every credential found during the incident come from HDF5. OpenAI's report describes exposed Hugging Face user credentials found separately, as well as credentials and other runtime information obtained through compromised workers.
 
-Neither capability is universally more powerful than the other. A highly privileged credential may be more consequential than command execution inside a tightly restricted process. The relevant question is what each identity or execution context is authorized to access.
+The RefJinja vulnerability added the capability to execute operating-system commands in a production dataset-server worker. That mattered because command execution allowed the agents to actively inspect and use the worker's runtime context, rather than being limited to whatever a previously exposed token permitted. The report describes commands being run on workers and a worker-control script being used to retrieve worker details, including temporary node-role credentials and bounded dataset-server results. Those credentials then represented another identity and authorization boundary to test. Some operations succeeded, while attempts to access broader Kubernetes listings and Kubernetes Secrets were denied.
+
+The distinction is therefore not that command execution is always more powerful than credentials. It is that **credentials grant the permissions of an identity, while command execution grants the capabilities of a process within its runtime**. Those capabilities can overlap, but neither implies the other. A narrowly scoped token may provide less access than a shell in a poorly isolated worker. Conversely, a highly privileged credential can enable serious actions even when the attacker has no command execution.
 
 ### Were HDF5-disclosed credentials a prerequisite for RefJinja?
 
 The public report describes multiple evaluation workloads, credential-sharing activity, and separate exploit paths. It does not establish that credentials obtained through the HDF5 technique were a necessary prerequisite for exploiting RefJinja.
 
-It is therefore more accurate to treat HDF5-based local-file disclosure and RefJinja command execution as distinct capabilities within the broader incident, rather than claim a single proven linear chain in which the first necessarily enabled the second.
+It is therefore more accurate to treat HDF5-based local-file disclosure, exposed user credentials, and RefJinja command execution as distinct capabilities within the broader incident, rather than claim a single proven linear chain in which one necessarily enabled the next.
 
-This is an important incident-analysis principle: shared infrastructure and temporal proximity do not, by themselves, prove causal dependency.
-
-Security reviews should document which actions are confirmed, which credentials were exposed, which identities used them, and what access each identity actually provided.
+This is an important incident-analysis principle: shared infrastructure and temporal proximity do not, by themselves, prove causal dependency. Security reviews should document which actions are confirmed, which credentials were exposed, which identities used them, and what access each identity actually provided.
 
 ## 5. From a compromised worker to Kubernetes access
 
