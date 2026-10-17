@@ -181,14 +181,123 @@ The incident is useful for agent and code-execution design because each weakness
 
 Monitor these same boundaries: unexpected outbound requests, new users or plugins, unusual file access, secret retrieval, and atypical Kubernetes API calls. Correlate events across workloads so a sequence of individually ordinary actions is visible as a broader intrusion path.
 
+## 7. Defensive implementation: checks and configuration
+
+These are implementation patterns to validate in staging, not claims about the exact configuration OpenAI or Hugging Face used.
+
+### HDF5: reject external storage before reading values
+
+HDF5 exposes the external-storage list on each dataset. With `h5py`, reject any dataset with external storage before downstream code reads its values:
+
+```python
+import h5py
+
+def reject_external_storage(h5_file):
+    def inspect(name, obj):
+        if isinstance(obj, h5py.Dataset) and obj.external:
+            raise ValueError(
+                f"Rejected HDF5 dataset {name!r}: external storage is not allowed"
+            )
+    h5_file.visititems(inspect)
+
+with h5py.File("untrusted.h5", "r") as h5:
+    reject_external_storage(h5)
+    # Only after validation should application code read dataset values.
+```
+
+At the native API level, the equivalent check is to reject a dataset creation property list when `H5Pget_external_count(plist_id) > 0`. `H5Pget_external` can enumerate the referenced file, offset, and size. This is an admission check, not a substitute for filesystem isolation. The Hugging Face technical timeline says its fix stopped processing HDF5 external references; compare your deployed loader with the [current HDF5 loader source](https://github.com/huggingface/datasets/blob/main/src/datasets/packaged_modules/hdf5/hdf5.py).
+
+**Regression test:** create a test HDF5 dataset whose external raw-storage path points to a temporary fixture file containing a harmless marker. Assert the validator rejects the file before reading values, and assert the preview endpoint never returns the marker. To test path restrictions, a disposable container can substitute a harmless fixture at a path such as `/etc/hostname`; do not run this against a production worker or use a real secret as the fixture.
+
+### RefJinja: verify that untrusted fields are not rendered
+
+ReferenceFileSystem format version 1 supports `templates` and `gen` for compact, generated references. That is why Jinja exists in the format: these fields are designed to render expressions into reference values. The vulnerability arose when attacker-controlled content reached that renderer and the expression escaped simple value formatting into Python object traversal and command execution. See the [fsspec ReferenceFileSystem implementation](https://github.com/fsspec/filesystem_spec/blob/master/fsspec/implementations/reference.py) and Hugging Face's [technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline).
+
+**Regression test:** put the harmless expression `{{ 6 * 7 }}` into a test descriptor field that should be treated as data. Assert that the descriptor is rejected or the string remains literal. It must not unexpectedly become `42`. Test the deployed `templates` and `gen` paths if the version supports them. Do not treat a Jinja sandbox as an OS isolation boundary.
+
+### Artifactory and Nexus: constrain remote repository features
+
+- **Remote URL allowlists:** Limit remote repositories to approved upstream hosts and paths. Enforce destination restrictions at the network layer too. Test redirects, DNS changes, IPv4 and IPv6 loopback, link-local, private ranges, and cloud metadata destinations. An initial-hostname allowlist alone may not constrain the final destination.
+- **Plugins and extensions:** Disable user-installed Groovy plugins where they are not required. Restrict plugin installation and repository configuration to a controlled administrator workflow, and alert on changes.
+- **Credentials:** Remove shared reader credentials. Give automation separate identities and scoped, short-lived tokens. A reader identity must not be able to refresh or mint a token with broader privileges.
+- **Egress:** Do not let a package proxy become an unrestricted network relay. Apply outbound allowlists to the service itself, and log the requested repository, resolved destination, redirect chain, caller identity, and denied requests.
+
+These checks apply to self-hosted Artifactory and Nexus as analogous controls; they are not evidence that every product has the same vulnerability.
+
+### Kubernetes and cloud identity: contain a worker compromise
+
+For a worker that does not need Kubernetes API access, disable automatic service-account token mounting and apply restrictive pod settings. For example:
+
+```yaml
+spec:
+  automountServiceAccountToken: false
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  containers:
+    - name: worker
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
+```
+
+Apply the Kubernetes Pod Security **restricted** profile where compatible, and reject privileged pods, host namespaces, and unapproved hostPath mounts through admission policy. If the worker needs the Kubernetes API, mount a narrowly scoped token explicitly rather than disabling a required identity without replacement.
+
+Review RBAC for sensitive subresources. A worker should not have `create` on `serviceaccounts/token` unless it must mint service-account tokens, or access to `nodes/proxy` unless there is a documented need. From an authorized test pod using the worker's service account, run:
+
+```bash
+kubectl auth can-i get secrets --all-namespaces
+kubectl auth can-i list pods --all-namespaces
+kubectl auth can-i create serviceaccounts/token -n <namespace>
+kubectl auth can-i get nodes/proxy
+kubectl auth can-i create pods/exec -n <namespace>
+```
+
+These commands only check authorization. Investigate unexpected `yes` results; also check token creation, pod creation, exec, secret access, and node proxy permissions separately. Block unnecessary access to the cloud instance metadata service at the network layer. On AWS, require IMDSv2 and review the hop limit, but do not rely on the hop limit alone as pod isolation. Avoid placing long-lived secrets in environment variables because code execution in the process can read them.
+
+## 8. Detect egress through trusted services
+
+A strict destination allowlist is necessary but not sufficient when allowed services can store or return attacker-controlled data. In the incident, Hugging Face APIs and attacker-controlled datasets served as a command-and-control and data-return channel. Similar patterns can use approved paste, screenshot, issue-tracking, package, or file-sharing services without connecting to an obviously malicious domain.
+
+Useful detections include:
+
+- **Unexpected write behavior:** Alert when a read-oriented worker starts creating or modifying datasets, packages, artifacts, issues, screenshots, or other remote objects.
+- **Unusual data volume and cadence:** Detect repeated small uploads, high-frequency polling, encoded or compressed blobs, and write-then-read patterns that do not match the workload's normal behavior.
+- **Identity mismatch:** Correlate service identity, repository, destination, request rate, and data size. A dataset-processing worker should not normally publish arbitrary content to a user-controlled repository.
+- **Destination and DNS changes:** Log the final resolved IP, redirects, TLS identity, and egress policy decision, not just the requested hostname.
+- **Cross-system correlation:** Join worker process events, outbound requests, credential use, and Kubernetes API audit logs. A sequence of benign-looking API calls may reveal exfiltration or C2 when correlated.
+
+Prefer service-specific egress proxies and explicit write permissions over a broad “HTTPS allowed” rule. Where a trusted service is required, restrict which tenant, repository, endpoint, and operation the workload may use. Alerting helps detect abuse; it does not replace limiting the worker's access in the first place.
+
+## 9. Who else should review these boundaries?
+
+These are adjacent risk surfaces, not claims that each product was affected by this incident:
+
+- **Zarr and kerchunk:** Review remote reference resolution, metadata-driven file access, and the credentials available to readers.
+- **xarray and scientific data services:** Review backend readers and whether untrusted datasets can influence filesystem or cloud access.
+- **Notebook and code-execution services:** Check user-controlled code, mounted credentials, egress, and reuse of worker environments.
+- **Document converters, archive extractors, image processors, and model-inspection tools:** Treat parsers as hostile-input workloads and restrict local file access.
+- **Self-hosted Artifactory and Nexus:** Review remote repository URL restrictions, outbound network policy, plugin administration, and shared automation credentials.
+
+## 10. Patch status and disclosure
+
+Hugging Face's [July incident disclosure](https://huggingface.co/blog/security-incident-july-2026) and [technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) describe closing the dataset-processing paths, rotating affected credentials, rebuilding compromised nodes, blocking metadata-service access for workloads, and tightening cluster admission and detection. The technical timeline says the renderer no longer evaluates template expressions in data fields or processes HDF5 external references.
+
+OpenAI's [incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) describes rebuilding Artifactory, revoking agent credentials, tightening access controls, and notifying JFrog of the token-refresh flaw. The public writeups do not provide a complete vendor-by-vendor package-version matrix for all affected components, so this article does not invent fixed version numbers or CVE identifiers. Verify deployed Artifactory, `datasets`, `h5py`, `fsspec`, and Jinja2 versions against current vendor advisories and lockfiles, then confirm the mitigations with regression tests.
+
 ## Conclusion
 
-The incident shows how network access, application permissions, exposed credentials, unsafe file processing, and infrastructure privileges can combine to expand an agent's capabilities. Systems that run agents or untrusted code should enforce each boundary independently, so a failure in one does not grant access to everything behind it.
+Model an agent's **reach, control, identity, and process** separately, then test each boundary with harmless regression tests. A parser should not read beyond its input, a descriptor should not unexpectedly become executable logic, and a compromised worker should not inherit credentials or infrastructure permissions it does not need.
 
 ## Further reading
 
 - [OpenAI: The Hugging Face incident and the road ahead](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) for the public incident summary and timeline.
 - [OpenAI's technical incident report](https://cdn.openai.com/pdf/67869394-cb91-4c12-888c-5cbd85c7814c/OpenAI-Hugging-Face%20Incident-Technical-Report.pdf) for the detailed chronology and confirmed impact.
+- [Hugging Face's July 2026 incident disclosure](https://huggingface.co/blog/security-incident-july-2026) for its response and remediation summary.
+- [Hugging Face's technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) for the HDF5 and RefJinja data paths and hardening changes.
+- [Hugging Face's HDF5 loader](https://github.com/huggingface/datasets/blob/main/src/datasets/packaged_modules/hdf5/hdf5.py) for the external-storage rejection check in current source.
 - [HDF5 dataset creation property list API](https://portal.hdfgroup.org/documentation/hdf5/latest/group___d_c_p_l.html) for external raw storage configuration.
 - [fsspec ReferenceFileSystem documentation](https://filesystem-spec.readthedocs.io/en/latest/api.html#fsspec.implementations.reference.ReferenceFileSystem) for the reference-based filesystem abstraction involved in RefJinja.
 - [Hugging Face Dataset Viewer source code](https://github.com/huggingface/dataset-viewer) for the dataset-processing service context.
