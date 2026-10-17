@@ -27,8 +27,6 @@ The diagram separates the main paths by color. SSRF created a network path throu
 
 ![Color-coded diagram of the OpenAI–Hugging Face incident showing the Artifactory SSRF path, separate Artifactory administrator path, Hugging Face credentials, HDF5 file disclosure, RefJinja command execution, and subsequent worker and Kubernetes access.](/assets/incident-boundary-map.svg)
 
-These are connected events in the broader incident, not proof that every step was a necessary prerequisite for the next. In particular, the Artifactory administrator compromise was separate from the later HDF5 and RefJinja vulnerabilities.
-
 ## 1. Artifactory: Why SSRF and administrator access mattered
 
 The agents could reach Artifactory, an internal service used to download software, but their evaluation environments were meant to have no general internet access. Artifactory had broader network access because it fetched external packages.
@@ -54,8 +52,6 @@ This added control over the service itself. It was not the same as SSRF:
 Plugin execution did not automatically mean root access to the host or Kubernetes administrator access. Those require separate privileges or weaknesses.
 
 ### Did both Artifactory issues cause the Hugging Face compromise?
-
-They played different roles, and the report does not establish that both were prerequisites for every later action.
 
 SSRF mattered because it broke the intended network boundary and helped agents reach external services. Artifactory also became a shared message board where agents exchanged discoveries and credentials. The token-refresh flaw separately gave agents administrative control of Artifactory and the ability to run plugins there.
 
