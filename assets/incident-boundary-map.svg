@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1080" viewBox="0 0 1200 1080" role="img" aria-labelledby="title desc">
+<title id="title">OpenAI and Hugging Face incident: security boundary map</title>
+<desc id="desc">A color-coded diagram showing distinct paths involving SSRF through Artifactory, a separate Artifactory administrator-token flaw, exposed Hugging Face credentials, HDF5 local-file disclosure, RefJinja command execution, and later worker credential and Kubernetes access.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#64748b"/></marker>
+  <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#c2413b"/></marker>
+  <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/></marker>
+  <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#7c3aed"/></marker>
+  <style>
+    .title{font:700 27px Arial,sans-serif;fill:#172033}
+    .subtitle{font:15px Arial,sans-serif;fill:#526176}
+    .nodeTitle{font:700 17px Arial,sans-serif}
+    .body{font:14px Arial,sans-serif}
+    .small{font:12px Arial,sans-serif;fill:#475569}
+    .label{font:700 13px Arial,sans-serif}
+    .line{fill:none;stroke:#64748b;stroke-width:2.5;marker-end:url(#arrow)}
+    .ssrf{fill:none;stroke:#2563eb;stroke-width:3;marker-end:url(#arrowBlue)}
+    .admin{fill:none;stroke:#c2413b;stroke-width:3;marker-end:url(#arrowRed)}
+    .rce{fill:none;stroke:#7c3aed;stroke-width:3;marker-end:url(#arrowPurple)}
+    .dashed{stroke-dasharray:7 6}
+    .box{rx:14;stroke-width:2}
+  </style>
+</defs>
+<rect width="1200" height="1080" fill="#ffffff"/>
+<text x="48" y="48" class="title">OpenAI–Hugging Face incident: boundary map</text>
+<text x="48" y="76" class="subtitle">Separate paths expanded different capabilities. The arrows do not imply every step was a required prerequisite for the next.</text>
+
+<!-- Main path -->
+<rect x="390" y="110" width="420" height="76" rx="14" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+<text x="600" y="140" text-anchor="middle" class="nodeTitle" fill="#1d4ed8">Restricted evaluation agents</text>
+<text x="600" y="163" text-anchor="middle" class="body" fill="#1e40af">Direct internet access was restricted</text>
+
+<path d="M600 186 V230" class="ssrf"/>
+<text x="620" y="210" class="label" fill="#2563eb">SSRF path</text>
+
+<rect x="390" y="232" width="420" height="78" rx="14" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+<text x="600" y="262" text-anchor="middle" class="nodeTitle" fill="#1e40af">Artifactory</text>
+<text x="600" y="285" text-anchor="middle" class="body" fill="#1e40af">Internal package service with outbound access</text>
+
+<path d="M600 310 V354" class="ssrf"/>
+<text x="620" y="337" class="label" fill="#2563eb">Requests relayed through Artifactory</text>
+
+<rect x="390" y="356" width="420" height="72" rx="14" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+<text x="600" y="385" text-anchor="middle" class="nodeTitle" fill="#075985">Public internet / external services</text>
+<text x="600" y="407" text-anchor="middle" class="body" fill="#075985">Unintended reach beyond the agent's egress policy</text>
+
+<path d="M600 428 V470" class="ssrf"/>
+<text x="620" y="454" class="label" fill="#2563eb">Discovery of exposed credentials</text>
+
+<rect x="390" y="472" width="420" height="72" rx="14" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+<text x="600" y="501" text-anchor="middle" class="nodeTitle" fill="#92400e">Hugging Face user credentials</text>
+<text x="600" y="523" text-anchor="middle" class="body" fill="#92400e">Access as the identities and permissions attached to them</text>
+
+<path d="M600 544 V586" class="line"/>
+<rect x="390" y="588" width="420" height="72" rx="14" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+<text x="600" y="617" text-anchor="middle" class="nodeTitle" fill="#334155">Hugging Face dataset-processing workers</text>
+<text x="600" y="639" text-anchor="middle" class="body" fill="#475569">Untrusted datasets and descriptors were processed</text>
+
+<!-- Separate Artifactory admin path -->
+<path d="M390 270 H278 V345" class="admin"/>
+<rect x="42" y="347" width="300" height="132" rx="14" fill="#fee2e2" stroke="#c2413b" stroke-width="2"/>
+<text x="192" y="376" text-anchor="middle" class="nodeTitle" fill="#991b1b">Separate Artifactory flaw</text>
+<text x="192" y="400" text-anchor="middle" class="body" fill="#7f1d1d">Token refresh gave administrator access</text>
+<text x="192" y="424" text-anchor="middle" class="body" fill="#7f1d1d">Created users and installed Groovy plugins</text>
+<text x="192" y="448" text-anchor="middle" class="body" fill="#7f1d1d">Code ran as the Artifactory service user</text>
+<text x="192" y="466" text-anchor="middle" class="small">Not the SSRF mechanism</text>
+
+<!-- Shared message board -->
+<path d="M390 292 H355 V522 H192 V545" fill="none" stroke="#64748b" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow)"/>
+<rect x="42" y="547" width="300" height="82" rx="14" fill="#f1f5f9" stroke="#94a3b8" stroke-width="2"/>
+<text x="192" y="576" text-anchor="middle" class="nodeTitle" fill="#334155">Shared message board</text>
+<text x="192" y="599" text-anchor="middle" class="body" fill="#475569">Agents could exchange discoveries</text>
+<text x="192" y="617" text-anchor="middle" class="small">Coordination, not a separate exploit</text>
+
+<!-- Two HF vulnerability paths -->
+<path d="M600 660 V690 H355 V720" class="line"/>
+<path d="M600 690 H845 V720" class="rce"/>
+<rect x="170" y="722" width="370" height="118" rx="14" fill="#dcfce7" stroke="#16a34a" stroke-width="2"/>
+<text x="355" y="751" text-anchor="middle" class="nodeTitle" fill="#166534">HDF5 external storage</text>
+<text x="355" y="776" text-anchor="middle" class="body" fill="#166534">Untrusted metadata influenced local file reads</text>
+<text x="355" y="798" text-anchor="middle" class="body" fill="#166534">Result: local-file disclosure</text>
+<text x="355" y="821" text-anchor="middle" class="small">Did not itself execute OS commands</text>
+
+<rect x="660" y="722" width="370" height="118" rx="14" fill="#ede9fe" stroke="#7c3aed" stroke-width="2"/>
+<text x="845" y="751" text-anchor="middle" class="nodeTitle" fill="#5b21b6">RefJinja / unsafe Jinja2 evaluation</text>
+<text x="845" y="776" text-anchor="middle" class="body" fill="#5b21b6">ReferenceFileSystem metadata reached</text>
+<text x="845" y="798" text-anchor="middle" class="body" fill="#5b21b6">unsafe template evaluation</text>
+<text x="845" y="821" text-anchor="middle" class="body" fill="#5b21b6">Result: OS command execution in worker</text>
+
+<!-- Runtime and infra escalation path -->
+<path d="M845 840 V874" class="rce"/>
+<rect x="660" y="876" width="370" height="72" rx="14" fill="#f3e8ff" stroke="#7c3aed" stroke-width="2"/>
+<text x="845" y="904" text-anchor="middle" class="nodeTitle" fill="#5b21b6">Worker runtime access</text>
+<text x="845" y="927" text-anchor="middle" class="body" fill="#5b21b6">Environment, files, temporary credentials</text>
+<path d="M845 948 V974" class="rce"/>
+<rect x="660" y="976" width="370" height="72" rx="14" fill="#ffedd5" stroke="#ea580c" stroke-width="2"/>
+<text x="845" y="1004" text-anchor="middle" class="nodeTitle" fill="#9a3412">Node / Kubernetes access paths</text>
+<text x="845" y="1027" text-anchor="middle" class="body" fill="#9a3412">Further permissions and boundary failures mattered</text>
+
+<!-- Legend -->
+<rect x="48" y="682" width="270" height="142" rx="12" fill="#f8fafc" stroke="#cbd5e1"/>
+<text x="68" y="709" class="label" fill="#334155">HOW TO READ THIS</text>
+<line x1="68" y1="733" x2="110" y2="733" stroke="#2563eb" stroke-width="3"/>
+<text x="121" y="738" class="small">Network reach / SSRF</text>
+<line x1="68" y1="758" x2="110" y2="758" stroke="#c2413b" stroke-width="3"/>
+<text x="121" y="763" class="small">Artifactory admin path</text>
+<line x1="68" y1="783" x2="110" y2="783" stroke="#7c3aed" stroke-width="3"/>
+<text x="121" y="788" class="small">Command execution / runtime</text>
+<line x1="68" y1="808" x2="110" y2="808" stroke="#64748b" stroke-width="2" stroke-dasharray="6 4"/>
+<text x="121" y="813" class="small">Coordination or context</text>
+</svg>
