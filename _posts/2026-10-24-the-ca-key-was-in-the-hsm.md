@@ -62,30 +62,9 @@ According to eMudhra's account, the April 30, 2025 key-generation ceremony creat
 
 That chain matters:
 
-```text
-Normal key-generation ceremony
-          |
-          v
-Expected ECC key pair created
-          |
-          +---- wrap/unwrap test deviation
-                         |
-                         v
-              Second, weak key pair created
-                         |
-                         v
-              Similar labels obscure the difference
-                         |
-                         v
-              CSR uses the weak public key
-                         |
-                         v
-              Root signs the intermediate certificate
-                         |
-                         v
-              A trusted CA certificate now points
-              to a private key outsiders can recover
-```
+![Color-coded diagram showing the eight-stage key-generation failure, from the intended HSM key pair through the weak second key, CSR selection, root signing, and loss of trust](/assets/ca-key-generation-failure.svg)
+
+The key transition is easy to miss in a plain timeline: the root can sign the certificate correctly while the public key inside it is already unsafe.
 
 The failure was not a forged signature on an otherwise correct certificate. The root could have signed the CSR correctly, using its own legitimate key, and the result would still be unsafe. The signature proved that the root signed the certificate contents. It did not prove that the subordinate private key had been generated with sufficient entropy or that it was the intended key from the ceremony.
 
