@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "When AI Agents Cross Security Boundaries"
+title: "The OpenAI Incident: When AI Agents Cross Security Boundaries"
 date: 2026-10-17
 categories:
   - security
