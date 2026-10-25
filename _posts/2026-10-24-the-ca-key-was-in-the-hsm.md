@@ -19,7 +19,7 @@ A certificate authority does not need to lose a hardware security module for its
 
 **eMudhra is not the first warning that the CA trust model can fail.** The [Comodo incident](https://blog.mozilla.org/security/2011/03/25/comodo-certificate-issue-follow-up/) and [DigiNotar compromise](https://blog.mozilla.org/security/2011/08/29/fraudulent-google-com-certificate/) showed different paths to fraudulent certificates; eMudhra’s case stands out because the intermediate private keys themselves were recoverable.
 
-That is the uncomfortable technical center of the [eMudhra incident tracked in Mozilla Bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). Eight intermediate CA certificates were found to have private keys that researchers could recover independently. The public investigation describes a key-generation ceremony, an unexpected second key pair, similar key labels, and a wrap/unwrap test that departed from the normal process.
+That is the core of the [eMudhra incident documented in Mozilla Bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). Eight intermediate CA certificates were found to have private keys that researchers could recover independently. The public investigation describes a key-generation ceremony, an unexpected second key pair, similar key labels, and a wrap/unwrap test that departed from the normal process.
 
 The important detail is not simply that the keys were weak. It is how a key that was supposed to be generated inside a hardware security module (HSM) became a key that outsiders could reconstruct from a tiny search space.
 
@@ -66,11 +66,11 @@ That chain matters:
 
 ![Color-coded diagram showing the eight-stage key-generation failure, from the intended HSM key pair through the weak second key, CSR selection, root signing, and loss of trust](/assets/ca-key-generation-failure.svg)
 
-The key transition is easy to miss in a plain timeline: the root can sign the certificate correctly while the public key inside it is already unsafe.
+The root can sign a certificate correctly even when the public key inside it is unsafe.
 
 The failure was not a forged signature on an otherwise correct certificate. The root could have signed the CSR correctly, using its own legitimate key, and the result would still be unsafe. The signature proved that the root signed the certificate contents. It did not prove that the subordinate private key had been generated with sufficient entropy or that it was the intended key from the ceremony.
 
-This is a crucial distinction in PKI reviews: **a valid certificate signature can faithfully authenticate a bad key-management outcome.**
+This distinction matters in PKI reviews: **a valid certificate signature can faithfully authenticate a bad key-management outcome.**
 
 The HSM was not necessarily mathematically broken. eMudhra said the devices were Utimaco HSMs and that its preliminary investigation pointed to a flaw in the key-generation ceremony script and human errors in the lifecycle process. A hardware boundary cannot compensate for a workflow that creates an unintended key object and then selects it for certification.
 
@@ -110,7 +110,7 @@ The recovered CA key supplies the first condition. It does not automatically sup
 
 This distinction is easy to lose in incident summaries. A certificate for a major website is not a credential to log in to that website's servers. It does not reveal the website's own TLS private key. It does not decrypt previously recorded TLS sessions. In TLS 1.3, the server proves possession of its own private key during the handshake, while ephemeral key exchange protects session secrets. A CA key signs certificates; it is not a universal TLS decryption key. See [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280) for certificate and path-validation semantics and [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446) for TLS 1.3.
 
-This is not an argument that the compromise is low impact. It is a way to identify exactly which additional control an attacker would need to defeat next.
+This does not make the compromise low impact. It identifies the additional controls an attacker would need to defeat.
 
 ## Why browser distrust is different from revoking a leaf certificate
 
@@ -194,13 +194,13 @@ The relevant standards and policy are the [CA/Browser Forum Baseline Requirement
 
 ## The uncomfortable conclusion
 
-The eMudhra incident is not evidence that P-384 is broken. It is evidence that a certificate authority can use a strong algorithm, a compliant HSM, and a correctly signed certificate while still failing at the point where key material becomes trust.
+The eMudhra incident does not show that P-384 is broken. It shows that a CA can use a strong algorithm, a compliant HSM, and a correctly signed certificate, yet still fail when key material becomes part of the trust chain.
 
 The most important failure happened before a browser saw a fraudulent website certificate. A weak private key was bound into an intermediate CA certificate that relying parties had been taught to trust. Once the private key could be reconstructed, the certificate's cryptographic legitimacy became an attacker capability.
 
 That capability is serious on its own: it invalidates confidence that the CA approved every certificate signed by the key. But it should not be confused with automatic traffic interception. For TLS, an attacker still needs a path to the victim and a client that accepts the forged chain. For client-authentication and signing systems, the path can be different and sometimes more direct.
 
-A trustworthy CA needs more than secret keys. It needs evidence that the right keys were generated, the right keys were certified, the right keys were used, and that any mismatch stops the process before it becomes part of the trust infrastructure.
+A trustworthy CA needs more than secret keys. It must be able to show that the intended keys were generated, certified, and used, and that any mismatch stops the process before it reaches the trust infrastructure.
 
 ## Further reading
 
