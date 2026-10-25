@@ -136,11 +136,11 @@ OpenAI's [incident report](https://openai.com/index/hugging-face-incident-and-th
 
 ## Takeaways
 
-- Restrict what a workload can reach, not just its direct internet access.
-- Treat parser metadata as untrusted input that can influence file and network access.
-- Never let untrusted data unexpectedly become executable template logic.
-- Keep credentials out of parser environments and limit worker identities.
-- Test worker, node, and cluster boundaries independently.
+- **Artifactory:** Restrict remote-repository URLs and outbound destinations; reject invalid token signatures and limit who can install plugins.
+- **HDF5 previews:** Reject external-storage references in untrusted datasets, and run parsers without access to host files or production secrets.
+- **ReferenceFileSystem:** Do not evaluate Jinja expressions from untrusted descriptors. Treat descriptor fields as data, not templates.
+- **Worker credentials:** Block unnecessary cloud metadata access and avoid mounting Kubernetes tokens into dataset-processing pods that do not need them.
+- **Kubernetes:** Apply least-privilege RBAC and block privileged pods and unapproved host mounts. Test the worker's effective permissions, not just its pod configuration.
 
 ## Further reading
 
