@@ -13,7 +13,7 @@ tags:
 description: "A technical analysis of the eMudhra intermediate-CA private-key compromise, the weak P-384 keys behind it, and why certificate trust, key custody, and traffic interception are different security boundaries."
 ---
 
-# eMudhra's CA Private Key Failure: How Weak Key Generation Broke Trust
+*How a Flawed Key Ceremony Undermined Certificate Trust*
 
 A certificate authority does not need to lose a hardware security module for its trust to fail. It only needs to issue a certificate whose private key was never unpredictable in the first place.
 
