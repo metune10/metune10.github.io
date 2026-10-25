@@ -17,6 +17,8 @@ description: "A technical analysis of the eMudhra intermediate-CA private-key co
 
 A certificate authority (CA) can lose trust without an attacker stealing anything from its hardware security module (HSM). In the eMudhra incident, several issued intermediate certificates contained private keys that were predictable enough to recover. [Mozilla's investigation](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449) reported eight P-384 private scalars smaller than 256, making each key recoverable by trying at most 256 candidates.
 
+This is not the first CA trust failure. The [Comodo incident](https://blog.mozilla.org/security/2011/03/25/comodo-certificate-issue-follow-up/) and [DigiNotar compromise](https://blog.mozilla.org/security/2011/08/29/fraudulent-google-com-certificate/) also led to fraudulent certificates, though through different failures.
+
 ## What failed
 
 The keys were not recovered by breaking P-384. Each private scalar was smaller than 256, so an attacker could try the small candidate range and compare each resulting public key with the public key in the certificate.
