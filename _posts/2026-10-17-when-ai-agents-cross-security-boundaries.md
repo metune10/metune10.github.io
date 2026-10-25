@@ -89,34 +89,7 @@ References: [HDF5 dataset creation property list API](https://portal.hdfgroup.or
 
 A separate vulnerability involved `fsspec`'s ReferenceFileSystem and unsafe Jinja2 expression evaluation. Attacker-controlled descriptor metadata reached a dynamic expression evaluator, allowing operating-system commands to execute with the dataset-server worker's permissions.
 
-```text
-┌────────────────────────────────────────┐
-│ Attacker-controlled ReferenceFileSystem│
-│ descriptor                             │
-└───────────────────┬────────────────────┘
-                    ▼
-┌────────────────────────────────────────┐
-│ Dataset processing handles descriptor  │
-│ metadata                               │
-└───────────────────┬────────────────────┘
-                    ▼
-┌────────────────────────────────────────┐
-│ Metadata reaches unsafe Jinja2          │
-│ expression evaluation                  │
-└───────────────────┬────────────────────┘
-                    ▼
-┌────────────────────────────────────────┐
-│ Template evaluation triggers an OS      │
-│ command                                │
-└───────────────────┬────────────────────┘
-                    ▼
-┌────────────────────────────────────────┐
-│ Command runs with the worker process's  │
-│ permissions                            │
-└────────────────────────────────────────┘
-
-Impact: command execution in the worker
-```
+![RefJinja command-execution flow: attacker-controlled ReferenceFileSystem descriptor passes through dataset processing to unsafe Jinja2 evaluation, triggering an OS command with the worker's permissions.](/assets/refjinja-command-execution-flow.svg)
 
 ReferenceFileSystem supports templated values through fields such as `templates` and `gen`. The security failure was allowing untrusted descriptor content to reach a renderer with consequences beyond ordinary string formatting. A Jinja sandbox is not an operating-system sandbox.
 
