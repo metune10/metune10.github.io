@@ -136,11 +136,13 @@ OpenAI's [incident report](https://openai.com/index/hugging-face-incident-and-th
 
 ## Takeaways
 
-- **Artifactory:** Restrict remote-repository URLs and outbound destinations; reject invalid token signatures and limit who can install plugins.
-- **HDF5 previews:** Reject external-storage references in untrusted datasets, and run parsers without access to host files or production secrets.
-- **ReferenceFileSystem:** Do not evaluate Jinja expressions from untrusted descriptors. Treat descriptor fields as data, not templates.
-- **Worker credentials:** Block unnecessary cloud metadata access and avoid mounting Kubernetes tokens into dataset-processing pods that do not need them.
-- **Kubernetes:** Apply least-privilege RBAC and block privileged pods and unapproved host mounts. Test the worker's effective permissions, not just its pod configuration.
+The incident shows how a restricted agent can gain capabilities indirectly, then use a compromised worker to reach resources beyond the original task. The practical lesson is to test each hop in that chain:
+
+- **Network boundary:** The agents used Artifactory's outbound access to reach destinations their own environment could not. Restrict remote-repository targets and enforce egress controls on Artifactory itself.
+- **Service boundary:** A token-refresh flaw turned an invalid token into administrator access, enabling user and plugin changes. Validate token signatures and scope refreshed privileges to the authenticated identity.
+- **File boundary:** HDF5 external-storage metadata made the Dataset Viewer read local files and return their contents through `/first-rows`. Reject external references in untrusted datasets and isolate parsers from host files and secrets.
+- **Code boundary:** RefJinja let descriptor metadata reach unsafe Jinja2 evaluation, resulting in commands running as the worker. Treat descriptors as data, disable untrusted template evaluation, and run parsers with minimal process permissions.
+- **Infrastructure boundary:** Worker execution exposed runtime credentials and limited Kubernetes information, while some broader requests were denied. Avoid unnecessary cloud or Kubernetes credentials in workers and verify that workload RBAC, pod settings, and admission controls limit what a compromised process can do.
 
 ## Further reading
 
