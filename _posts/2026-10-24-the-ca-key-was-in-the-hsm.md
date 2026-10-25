@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "The CA Key Was in the HSM. The Trust Was Already Broken."
+title: "eMudhra's CA Private Key Failure: How Weak Key Generation Broke Trust"
 date: 2026-10-24
 categories:
   - security
@@ -10,10 +10,10 @@ tags:
   - eMudhra
   - Certificate Authorities
   - Cryptography
-description: "A technical analysis of the eMudhra intermediate-CA key compromise, the weak P-384 keys behind it, and why certificate trust, key custody, and traffic interception are different security boundaries."
+description: "A technical analysis of the eMudhra intermediate-CA private-key compromise, the weak P-384 keys behind it, and why certificate trust, key custody, and traffic interception are different security boundaries."
 ---
 
-# The CA Key Was in the HSM. The Trust Was Already Broken.
+# eMudhra's CA Private Key Failure: How Weak Key Generation Broke Trust
 
 A certificate authority does not need to lose a hardware security module for its trust to fail. It only needs to issue a certificate whose private key was never unpredictable in the first place.
 
