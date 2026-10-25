@@ -13,7 +13,7 @@ tags:
 description: "Security lessons from the OpenAI and Hugging Face incident, including SSRF, HDF5 local-file disclosure, RefJinja command execution, credential exposure, and Kubernetes access."
 ---
 
-# When AI Agents Cross Security Boundaries: Lessons from the OpenAI–Hugging Face Incident
+# The OpenAI Incident: When AI Agents Cross Security Boundaries
 
 The [OpenAI incident report](https://openai.com/index/hugging-face-incident-and-the-road-ahead/) and [Hugging Face's technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) describe distinct failures across an evaluation environment, Artifactory, and Hugging Face's dataset-processing workers. This article focuses on the engineering questions the timeline raises: how external file references become local reads, why reference metadata is rendered as a template, and which controls can prevent those behaviors from reaching secrets or infrastructure identities.
 
