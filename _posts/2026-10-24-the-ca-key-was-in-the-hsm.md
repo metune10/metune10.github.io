@@ -17,6 +17,8 @@ description: "A technical analysis of the eMudhra intermediate-CA private-key co
 
 A certificate authority does not need to lose a hardware security module for its trust to fail. It only needs to issue a certificate whose private key was never unpredictable in the first place.
 
+**eMudhra is not the first warning that the CA trust model can fail.** The [Comodo incident](https://blog.mozilla.org/security/2011/03/25/comodo-certificate-issue-follow-up/) and [DigiNotar compromise](https://blog.mozilla.org/security/2011/08/29/fraudulent-google-com-certificate/) showed different paths to fraudulent certificates; eMudhra’s case stands out because the intermediate private keys themselves were recoverable.
+
 That is the uncomfortable technical center of the [eMudhra incident tracked in Mozilla Bug 2083449](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). Eight intermediate CA certificates were found to have private keys that researchers could recover independently. The public investigation describes a key-generation ceremony, an unexpected second key pair, similar key labels, and a wrap/unwrap test that departed from the normal process.
 
 The important detail is not simply that the keys were weak. It is how a key that was supposed to be generated inside a hardware security module (HSM) became a key that outsiders could reconstruct from a tiny search space.
