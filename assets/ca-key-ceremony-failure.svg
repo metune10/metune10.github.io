@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1370" viewBox="0 0 1200 1370" role="img" aria-labelledby="title desc">
+<title id="title">How a weak key entered a trusted CA certificate</title>
+<desc id="desc">Eight-stage flow from normal HSM key generation through an anomalous wrap and unwrap test, weak second key pair, confusing labels, CSR selection, root signing, and a trusted intermediate whose private key is recoverable.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f8fbff"/><stop offset="1" stop-color="#f4f3ff"/></linearGradient>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#16264d" flood-opacity=".09"/></filter>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10Z" fill="#64748b"/></marker>
+  <style>
+    .head{font:700 25px Inter,Arial,sans-serif;fill:#14213d}.body{font:400 18px Inter,Arial,sans-serif;fill:#334155}.small{font:600 15px Inter,Arial,sans-serif;letter-spacing:1.3px}.num{font:700 22px Inter,Arial,sans-serif;fill:white}.call{font:600 16px Inter,Arial,sans-serif;fill:#26334d}
+  </style>
+</defs>
+<rect width="1200" height="1370" rx="28" fill="url(#bg)"/>
+<text x="60" y="58" class="small" fill="#536987">INCIDENT PATH · KEY GENERATION → TRUST FAILURE</text>
+<text x="60" y="100" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="800" fill="#101b36">How the wrong key became trusted</text>
+<text x="60" y="132" font-family="Inter,Arial,sans-serif" font-size="18" fill="#5b6880">The cryptographic primitive held. The key-generation and selection process did not.</text>
+<!-- vertical spine -->
+<path d="M92 208 V1220" stroke="#cbd5e1" stroke-width="4" stroke-dasharray="5 8" fill="none"/>
+<!-- Card 1 -->
+<g filter="url(#shadow)"><rect x="145" y="165" width="995" height="116" rx="18" fill="#fff" stroke="#93c5fd" stroke-width="2"/></g>
+<circle cx="92" cy="222" r="29" fill="#2563eb"/><text x="92" y="230" text-anchor="middle" class="num">1</text>
+<rect x="170" y="188" width="70" height="70" rx="16" fill="#dbeafe"/><rect x="185" y="207" width="40" height="32" rx="6" fill="#2563eb"/><path d="M193 215h24M193 222h24M193 229h15" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="205" cy="200" r="7" fill="none" stroke="#2563eb" stroke-width="4"/>
+<text x="265" y="207" class="head">Normal key-generation ceremony</text><text x="265" y="237" class="body">The CA starts an approved ECC key-generation process inside the HSM.</text>
+<rect x="865" y="187" width="250" height="72" rx="12" fill="#eff6ff"/><text x="885" y="215" class="call" fill="#1d4ed8">EXPECTED STATE</text><text x="885" y="240" class="body">Key created in HSM</text>
+<path d="M92 253 V307" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 2 -->
+<g filter="url(#shadow)"><rect x="145" y="310" width="995" height="116" rx="18" fill="#fff" stroke="#86efac" stroke-width="2"/></g>
+<circle cx="92" cy="367" r="29" fill="#059669"/><text x="92" y="375" text-anchor="middle" class="num">2</text>
+<rect x="170" y="333" width="70" height="70" rx="16" fill="#d1fae5"/><path d="M190 349h31v39h-31z" fill="#fff" stroke="#059669" stroke-width="3"/><path d="M197 360h17M197 368h17M197 376h11" stroke="#059669" stroke-width="3" stroke-linecap="round"/><path d="M211 344l7-7 7 7" stroke="#059669" stroke-width="3" fill="none"/>
+<text x="265" y="352" class="head">Expected ECC key pair created</text><text x="265" y="382" class="body">The HSM generates the intended P-384 key pair.</text>
+<rect x="865" y="332" width="250" height="72" rx="12" fill="#ecfdf5"/><text x="885" y="360" class="call" fill="#047857">EXPECTED STATE</text><text x="885" y="385" class="body">Strong private scalar</text>
+<path d="M92 398 V452" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 3 -->
+<g filter="url(#shadow)"><rect x="145" y="455" width="995" height="116" rx="18" fill="#fff" stroke="#fbbf24" stroke-width="2"/></g>
+<circle cx="92" cy="512" r="29" fill="#d97706"/><text x="92" y="520" text-anchor="middle" class="num">3</text>
+<rect x="170" y="478" width="70" height="70" rx="16" fill="#fef3c7"/><path d="M188 492h34v43h-34z" fill="#fff" stroke="#d97706" stroke-width="3"/><path d="M195 503h20M195 512h20M195 521h14" stroke="#d97706" stroke-width="3" stroke-linecap="round"/><path d="M218 529l8 13h-16z" fill="#dc2626"/><path d="M218 533v4M218 539v1" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+<text x="265" y="497" class="head">Wrap/unwrap test deviation</text><text x="265" y="527" class="body">An unexpected result appears during a key-handling test.</text>
+<rect x="865" y="477" width="250" height="72" rx="12" fill="#fffbeb"/><text x="885" y="505" class="call" fill="#b45309">SHOULD STOP HERE</text><text x="885" y="530" class="body">Investigate the anomaly</text>
+<path d="M92 543 V597" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 4 -->
+<g filter="url(#shadow)"><rect x="145" y="600" width="995" height="116" rx="18" fill="#fff" stroke="#fda4af" stroke-width="2"/></g>
+<circle cx="92" cy="657" r="29" fill="#e11d48"/><text x="92" y="665" text-anchor="middle" class="num">4</text>
+<rect x="170" y="623" width="70" height="70" rx="16" fill="#ffe4e6"/><circle cx="205" cy="653" r="17" fill="#e11d48"/><circle cx="205" cy="653" r="6" fill="#fff"/><path d="M192 665l-9 9 6 5 9-9" stroke="#9f1239" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M219 674l9 13h-18z" fill="#be123c"/><text x="219" y="684" font-family="Arial" font-size="11" font-weight="bold" fill="#fff" text-anchor="middle">!</text>
+<text x="265" y="642" class="head">A second, weak key pair is created</text><text x="265" y="672" class="body">The process continues and creates a second key with a tiny</text><text x="265" y="696" class="body">private-key search space (reported scalars below 256).</text>
+<rect x="865" y="622" width="250" height="72" rx="12" fill="#fff1f2"/><text x="885" y="650" class="call" fill="#be123c">CRYPTOGRAPHIC RISK</text><text x="885" y="675" class="body">Private key is recoverable</text>
+<path d="M92 688 V742" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 5 -->
+<g filter="url(#shadow)"><rect x="145" y="745" width="995" height="116" rx="18" fill="#fff" stroke="#c4b5fd" stroke-width="2"/></g>
+<circle cx="92" cy="802" r="29" fill="#7c3aed"/><text x="92" y="810" text-anchor="middle" class="num">5</text>
+<rect x="170" y="768" width="70" height="70" rx="16" fill="#ede9fe"/><rect x="182" y="782" width="24" height="39" rx="4" fill="#fff" stroke="#2563eb" stroke-width="2.5"/><rect x="211" y="782" width="17" height="39" rx="4" fill="#fff" stroke="#dc2626" stroke-width="2.5"/><path d="M187 791h14M187 799h14M187 807h10M215 791h9M215 799h9M215 807h9" stroke="#64748b" stroke-width="2"/>
+<text x="265" y="787" class="head">Similar labels hide the difference</text><text x="265" y="817" class="body">The two HSM objects have confusingly similar labels, making</text><text x="265" y="841" class="body">the unintended key harder to distinguish operationally.</text>
+<rect x="865" y="767" width="250" height="72" rx="12" fill="#f5f3ff"/><text x="885" y="795" class="call" fill="#6d28d9">SELECTION FAILURE</text><text x="885" y="820" class="body">Label ≠ key identity</text>
+<path d="M92 833 V887" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 6 -->
+<g filter="url(#shadow)"><rect x="145" y="890" width="995" height="116" rx="18" fill="#fff" stroke="#67e8f9" stroke-width="2"/></g>
+<circle cx="92" cy="947" r="29" fill="#0891b2"/><text x="92" y="955" text-anchor="middle" class="num">6</text>
+<rect x="170" y="913" width="70" height="70" rx="16" fill="#cffafe"/><path d="M190 925h30v46h-30z" fill="#fff" stroke="#0891b2" stroke-width="3"/><text x="205" y="943" font-family="Arial" font-size="13" font-weight="bold" fill="#0e7490" text-anchor="middle">CSR</text><path d="M197 951h16M197 958h20M197 965h14" stroke="#0891b2" stroke-width="2.5" stroke-linecap="round"/>
+<text x="265" y="932" class="head">CSR contains the weak public key</text><text x="265" y="962" class="body">The certificate signing request carries the public key belonging</text><text x="265" y="986" class="body">to the unintended weak key pair.</text>
+<rect x="865" y="912" width="250" height="72" rx="12" fill="#ecfeff"/><text x="885" y="940" class="call" fill="#0e7490">MISSED CHECK</text><text x="885" y="965" class="body">Provenance not verified</text>
+<path d="M92 978 V1032" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 7 -->
+<g filter="url(#shadow)"><rect x="145" y="1035" width="995" height="116" rx="18" fill="#fff" stroke="#93c5fd" stroke-width="2"/></g>
+<circle cx="92" cy="1092" r="29" fill="#2563eb"/><text x="92" y="1100" text-anchor="middle" class="num">7</text>
+<rect x="170" y="1058" width="70" height="70" rx="16" fill="#dbeafe"/><path d="M187 1071h36v43h-36z" fill="#fff" stroke="#2563eb" stroke-width="3"/><path d="M195 1081h20M195 1088h20M195 1095h15" stroke="#2563eb" stroke-width="2.5"/><path d="M204 1065l4-5 4 5" stroke="#d97706" stroke-width="3" fill="none"/>
+<text x="265" y="1077" class="head">Root signs the intermediate certificate</text><text x="265" y="1107" class="body">The root signs the certificate correctly, but the certified public</text><text x="265" y="1131" class="body">key is the weak one.</text>
+<rect x="865" y="1057" width="250" height="72" rx="12" fill="#eff6ff"/><text x="885" y="1085" class="call" fill="#1d4ed8">VALID SIGNATURE</text><text x="885" y="1110" class="body">Does not prove key quality</text>
+<path d="M92 1123 V1177" stroke="#64748b" stroke-width="3" marker-end="url(#arrow)"/>
+<!-- Card 8 -->
+<g filter="url(#shadow)"><rect x="145" y="1180" width="995" height="132" rx="18" fill="#fff" stroke="#fb7185" stroke-width="2.5"/></g>
+<circle cx="92" cy="1246" r="29" fill="#be123c"/><text x="92" y="1254" text-anchor="middle" class="num">8</text>
+<rect x="170" y="1211" width="70" height="70" rx="16" fill="#ffe4e6"/><rect x="183" y="1223" width="44" height="43" rx="6" fill="#fff" stroke="#be123c" stroke-width="3"/><path d="M183 1234h44" stroke="#be123c" stroke-width="3"/><circle cx="192" cy="1228" r="2" fill="#be123c"/><circle cx="199" cy="1228" r="2" fill="#be123c"/><rect x="198" y="1245" width="14" height="12" rx="3" fill="#be123c"/><path d="M201 1245v-4a4 4 0 0 1 8 0v4" stroke="#be123c" stroke-width="3" fill="none"/>
+<text x="265" y="1218" class="head">Trusted certificate, recoverable private key</text><text x="265" y="1248" class="body">Relying parties see a valid chain, while an outsider can recover</text><text x="265" y="1272" class="body">the intermediate's private key and sign certificates within its scope.</text>
+<rect x="865" y="1203" width="250" height="85" rx="12" fill="#fff1f2"/><text x="885" y="1232" class="call" fill="#be123c">TRUST FAILURE</text><text x="885" y="1257" class="body">Issuer integrity lost</text><text x="885" y="1278" font-family="Inter,Arial,sans-serif" font-size="14" fill="#9f1239">Interception needs more steps.</text>
+<text x="60" y="1344" font-family="Inter,Arial,sans-serif" font-size="14" fill="#64748b">Technical interpretation based on the public Mozilla bug discussion; process details should be checked against primary evidence.</text>
+</svg>
