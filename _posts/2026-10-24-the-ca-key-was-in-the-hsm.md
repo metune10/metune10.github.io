@@ -45,11 +45,11 @@ If those conditions hold, an attacker may terminate HTTPS at their own server an
 
 The impact also depends on the CA's purpose: code signing, TLS server authentication, and client authentication have different attack paths.
 
-## Why distrust matters
+## Containing a Compromised CA
 
-Attackers with a CA key can create new certificates, so revoking only certificates already discovered may not be enough. Browser and platform vendors block affected intermediates or remove trust in relevant authorities. The result varies across browsers, operating systems, applications, and update schedules.
+A compromised CA key can sign new certificates, so revoking known fraudulent certificates is not enough. Browsers and platforms must block the affected intermediate or remove trust in the issuing hierarchy. Protection depends on each client applying the relevant trust update.
 
-See the [Mozilla incident response](https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/) and [Chrome's response](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/). Certificate Transparency can help expose publicly trusted certificate issuance, but it does not replace containment of a compromised CA key.
+See [Mozilla's response](https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/) and [Chrome's response](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/). Certificate Transparency helps make certificate issuance observable, but it does not replace distrust of a compromised CA.
 
 
 
