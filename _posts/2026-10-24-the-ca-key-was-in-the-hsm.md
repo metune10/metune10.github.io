@@ -124,17 +124,55 @@ This is also why browser trust is not a single global switch. Browsers, operatin
 
 Useful primary references are the [Mozilla incident post](https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/) and the [Mozilla bug discussion](https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). They document the response; client behavior still depends on each platform's trust and revocation implementation.
 
-## The blast radius depends on what the CA is trusted to do
+## Scenario: a public Wi-Fi attacker with a stolen CA key
 
-The affected set included six TLS intermediates and two code-signing intermediates, according to Mozilla's report. That difference changes the attack path.
+Your scenario is technically plausible, with one qualification: a compromised TLS intermediate CA key can let an attacker issue a certificate for a domain they do not control, while DNS poisoning can help route the victim to a server presenting that certificate. Neither capability alone guarantees a successful impersonation.
 
-For a TLS issuing CA, the obvious risk is fraudulent server authentication. The attacker still needs a way to deliver a forged certificate to a client in a context where it will be accepted.
+### Walk through the connection
 
-For a code-signing CA, the relying party may be the system that receives and evaluates an attacker-supplied signed artifact. The attacker does not necessarily need to redirect an existing victim connection. They still need a delivery path and a victim or system willing to execute or trust the artifact, and platform policy can limit what the signature permits. But the required network capability is different.
+**1. The victim is sent to the wrong server.** The victim opens `https://www.example.com` on public Wi-Fi. If the attacker can influence the victim's DNS resolution or otherwise control the network path, the browser may connect to an attacker-controlled IP address. DNS determines where the browser connects; it does not authenticate the server.
 
-Enterprise PKI can be more direct still. If a compromised CA is trusted for client authentication, an attacker may be able to present a forged client certificate to a reachable service that maps certificate identities to accounts. A compromised Active Directory Certificate Services CA can have consequences for certificate-based domain authentication, depending on the CA's authority and environment. See [Certified Pre-Owned by SpecterOps](https://specterops.io/blog/2021/06/17/certified-pre-owned/) for the separate mechanics of AD CS abuse.
+**2. The fake server presents a certificate for the real hostname.** The attacker has recovered the private key of a compromised TLS-issuing intermediate. They can use it to sign a leaf certificate whose Subject Alternative Name contains `www.example.com` and whose public key corresponds to a private key the attacker controls. That allows the fake server to prove possession of the leaf private key during the TLS handshake.
 
-The lesson is to classify a CA key by its relying parties and permitted purposes, not just by whether it is called a "TLS CA" or "enterprise CA." The certificate's constraints, the trust store's policy, and the application that consumes the certificate all affect the real blast radius.
+**3. The browser checks the certificate chain.** The browser checks the hostname, validity period, signatures, constraints, and applicable trust-store and revocation policies. If the certificate chains to an authority the browser still trusts, and all other applicable checks pass, the browser may accept the certificate without a warning.
+
+**4. The attacker terminates the HTTPS connection.** If the victim's connection reaches the attacker's server and the browser accepts the certificate, TLS encrypts traffic between the victim and that attacker-controlled endpoint. The attacker can read or modify the HTTP data sent through that connection, subject to application-layer protections and the actual traffic flow.
+
+### What has to line up?
+
+- **Traffic steering:** the victim must connect to the attacker's endpoint. DNS manipulation is one possible route, not the only one.
+- **A matching certificate:** the presented leaf certificate must identify the hostname the victim requested.
+- **A usable signing key:** the compromised CA key must be authorized to issue the relevant type of certificate, and the forged chain must satisfy certificate constraints.
+- **A client that still accepts the CA:** the browser or application must not have received or applied a distrust update that blocks the affected intermediate or key.
+- **A working TLS endpoint:** the attacker must control the server and possess the leaf certificate's private key.
+
+The CA key gives the attacker certificate-issuing capability. It does not automatically give them control of DNS, the Wi-Fi access point, the victim's device, or the legitimate website's backend.
+
+### Would the browser trust the fake certificate?
+
+Potentially, yes. The browser is designed to accept certificates that chain to trusted authorities when the validation checks succeed. It cannot infer from the certificate alone that the CA's private key was generated with insufficient randomness.
+
+But this is not a claim that current, updated browsers will accept certificates from the affected eMudhra intermediates. Mozilla reported blocking the affected intermediates in Firefox through OneCRL, and Chrome reported blocking the affected TLS intermediate public-key hashes. Chrome also announced removal of the signing root from its root store, with rollout timing described in its response. The practical result depends on the browser or application, its trust store, its version, and whether the relevant blocklist or trust update has been applied. See [Mozilla's incident response](https://blog.mozilla.org/security/2026/10/20/protecting-firefox-users-following-the-compromise-of-emudhra-intermediate-certificates/) and [Chrome's incident response](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/).
+
+Certificate Transparency (CT) is another important condition. Chrome states that no TLS certificates chaining to the six affected TLS intermediates were logged before its blocking action, and that Chrome enforces CT for publicly trusted certificates by default. That means the hypothetical forged certificate should not be described as silently working against a CT-enforcing Chrome client under those conditions. CT is not a replacement for revoking a compromised CA key, but it can prevent acceptance of publicly trusted certificates that lack the required transparency evidence and helps make issuance observable. See [Chrome's technical account](https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/).
+
+### What the attacker does not get automatically
+
+A forged server certificate does not reveal the legitimate website's private key, grant access to its backend, or decrypt arbitrary previously recorded TLS sessions. The attacker impersonates the server only for connections that reach the attacker's endpoint and accept the forged certificate. In TLS 1.3, ephemeral key exchange protects session secrets; the CA key authorizes certificates but is not itself a session-decryption key. See [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446).
+
+DNS poisoning alone does not defeat HTTPS either. If a connection is redirected but the attacker cannot present a certificate the client accepts for the requested hostname, the browser should reject the authenticated HTTPS connection.
+
+### The actual blast radius
+
+The public reports describe six TLS intermediates and two code-signing intermediates. Their impact differs.
+
+For a **TLS intermediate**, the path is fraudulent server authentication: issue a leaf certificate, steer the victim's connection to the attacker's endpoint, and rely on a client that still accepts the chain.
+
+For a **code-signing intermediate**, the attacker could sign an artifact that appears to come from a trusted publisher, but still needs a way to deliver it and a user, operating system, or application that accepts and runs it under its code-signing policy.
+
+For **enterprise PKI**, the result depends on what the CA is authorized to issue. A compromised CA trusted for client authentication may let an attacker present a forged certificate that a service maps to an identity. A compromised Active Directory Certificate Services CA can have consequences for certificate-based domain authentication depending on the templates and environment. See [Certified Pre-Owned by SpecterOps](https://specterops.io/blog/2021/06/17/certified-pre-owned/) for the separate mechanics of AD CS abuse.
+
+The right question is not merely "Was a CA key compromised?" It is: **what kinds of certificates can this key authorize, which systems trust them, and what additional network position or user action is required to turn that authority into impact?**
 
 ## What a strong key ceremony should prove
 
