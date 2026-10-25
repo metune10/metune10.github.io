@@ -49,30 +49,7 @@ Hugging Face's Dataset Viewer parses uploaded datasets and returns previews thro
 
 HDF5 supports external raw storage: dataset metadata can name another file, an offset, and a byte range. When a loader follows attacker-controlled external-storage metadata, the worker may read files outside the uploaded dataset.
 
-```text
-┌──────────────────────────────────┐
-│ Attacker-controlled HDF5 metadata│
-└────────────────┬─────────────────┘
-                 ▼
-┌──────────────────────────────────┐
-│ Dataset Viewer parses the dataset│
-└────────────────┬─────────────────┘
-                 ▼
-┌──────────────────────────────────┐
-│ External storage points to a     │
-│ local file accessible to worker  │
-└────────────────┬─────────────────┘
-                 ▼
-┌──────────────────────────────────┐
-│ Worker reads the referenced file │
-└────────────────┬─────────────────┘
-                 ▼
-┌──────────────────────────────────┐
-│ /first-rows returns the read data│
-└──────────────────────────────────┘
-
-Impact: local-file disclosure
-```
+![HDF5 local-file disclosure flow: attacker-controlled metadata is parsed by Dataset Viewer, external-storage metadata points to a worker-accessible local file, the worker reads it, and /first-rows returns the data.](/assets/hdf5-local-file-disclosure-flow.svg)
 
 This was a **file-read issue, not command execution**. The risk came from untrusted metadata influencing what the worker read and the preview endpoint exposing that data. The report also describes a separate HDF5 memory-disclosure technique; it should not be conflated with external-storage file access.
 
