@@ -72,13 +72,28 @@ That feature is legitimate when the external file is trusted and intentionally p
 At a high level, the path was:
 
 ```text
-Attacker-controlled HDF5 metadata
-        ↓
-Dataset Viewer parses the dataset
-        ↓
-HDF5 external storage causes a local file read
-        ↓
-/first-rows returns data read by the worker
+┌──────────────────────────────────┐
+│ Attacker-controlled HDF5 metadata│
+└────────────────┬─────────────────┘
+                 ▼
+┌──────────────────────────────────┐
+│ Dataset Viewer parses the dataset│
+└────────────────┬─────────────────┘
+                 ▼
+┌──────────────────────────────────┐
+│ External storage points to a     │
+│ local file accessible to worker  │
+└────────────────┬─────────────────┘
+                 ▼
+┌──────────────────────────────────┐
+│ Worker reads the referenced file │
+└────────────────┬─────────────────┘
+                 ▼
+┌──────────────────────────────────┐
+│ /first-rows returns the read data│
+└──────────────────────────────────┘
+
+Impact: local-file disclosure
 ```
 
 The core failure was not that HDF5 files contain executable code. It was that untrusted metadata influenced which local data the worker read, and the preview response exposed that data.
@@ -109,13 +124,32 @@ A ReferenceFileSystem descriptor describes how to assemble data from references.
 At a conceptual level, the path was:
 
 ```text
-Attacker-controlled ReferenceFileSystem descriptor
-        ↓
-Dataset processing handles descriptor metadata
-        ↓
-Metadata reaches unsafe Jinja2 expression evaluation
-        ↓
-Operating-system command executes as the worker process
+┌────────────────────────────────────────┐
+│ Attacker-controlled ReferenceFileSystem│
+│ descriptor                             │
+└───────────────────┬────────────────────┘
+                    ▼
+┌────────────────────────────────────────┐
+│ Dataset processing handles descriptor  │
+│ metadata                               │
+└───────────────────┬────────────────────┘
+                    ▼
+┌────────────────────────────────────────┐
+│ Metadata reaches unsafe Jinja2          │
+│ expression evaluation                  │
+└───────────────────┬────────────────────┘
+                    ▼
+┌────────────────────────────────────────┐
+│ Template evaluation triggers an OS      │
+│ command                                │
+└───────────────────┬────────────────────┘
+                    ▼
+┌────────────────────────────────────────┐
+│ Command runs with the worker process's  │
+│ permissions                            │
+└────────────────────────────────────────┘
+
+Impact: command execution in the worker
 ```
 
 This is a high-level data-flow sketch, not a reproduction of the exploit. The important design error was allowing untrusted descriptor content to reach a dynamic expression evaluator with command-execution consequences.
