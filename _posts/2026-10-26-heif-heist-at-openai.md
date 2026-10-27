@@ -66,8 +66,8 @@ The final impact depended on the composition of these boundaries, not on `libhei
 
 - **Patch native dependencies.** Track OS-level libraries used by image-processing tools, including fixes that were not initially assigned a CVE.
 - **Sandbox image conversion.** Run decoders with a clean environment, restricted filesystem access, no unnecessary network access, and resource limits. Discourse later introduced [sandboxing for ImageMagick calls](https://github.com/discourse/discourse/commit/a07188016987de1613c961277e2e928aaa7c37ec).
-- **Harden SSO relying-party validation.** Bind identity assertions to the intended client, audience, redirect URI, nonce/state, and session; do not let control of one relying party authorize another user's session.
-- **Constrain integrations.** Limit what Codex and other connected apps can do in source-control organizations, and require appropriate review for sensitive repository actions.
+- **Scope Community sign-in tokens.** The failure was that tokens issued through OpenAI Community sign-in carried permissions that reached the user's ChatGPT and Codex APIs. Keep forum-login tokens limited to the forum's own sign-in needs; they must not grant ChatGPT/Codex API access. OpenAI said it narrowed these token permissions and revoked affected tokens and sessions.
+- **Restrict Codex's GitHub authority.** The employee's existing Codex connection could create a pull request in `openai/openai`. Limit connected-agent GitHub permissions to the repositories and operations required; protect internal branches with required review so an agent-authored PR cannot be merged solely on the strength of the compromised employee session.
 - **Rebuild affected deployments.** Discourse's [security advisory](https://github.com/discourse/discourse/security/advisories/GHSA-vhm9-85gw-x335) instructs self-hosted deployments to rebuild the container so patched OS packages are installed.
 
 ## Further reading
