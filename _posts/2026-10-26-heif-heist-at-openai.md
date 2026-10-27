@@ -40,16 +40,18 @@ Hacktron first developed code execution with ASLR disabled, then adapted the exp
 
 The forum supported **Sign in with OpenAI** through `auth.openai.com`. Hacktron reports that a separate SSO flaw let control of an SSO-connected relying party become impersonation of active members' ChatGPT and Codex accounts.
 
-The public report does not disclose enough detail to verify the SSO flaw's exact mechanism. The defensible chain is:
+The public report does not disclose the exact SSO exploit, so the mechanism below is a **plausible interpretation, not a confirmed reconstruction**.
+
+If the compromised forum could influence the OpenAI sign-in flow, the separate flaw may have allowed tokens issued for Community sign-in—or the authorization associated with them—to reach beyond forum authentication. Reporting says those tokens had permissions that reached the users' ChatGPT and Codex APIs. The missing detail is how the researchers turned control of the forum into usable access to those tokens or permissions; the public write-up does not establish that step.
 
 ```text
 forum code execution
-  → control of the SSO relying party
-  → separate OpenAI SSO flaw
-  → employee ChatGPT/Codex impersonation
+  → possible abuse of the Community SSO flow
+  → separate token / authorization flaw
+  → employee ChatGPT/Codex account access
 ```
 
-The employee's Codex account already had authorized access to OpenAI's GitHub organization. Hacktron used that existing integration to have Codex open a harmless pull request in `openai/openai`. The researchers say they stopped at proof of access and did not read or dump private source code.
+This is an inference from the reported token-permission issue, not proof that RCE directly exposed a token. The employee's Codex account already had authorized access to OpenAI's GitHub organization. Hacktron used that existing integration to have Codex open a harmless pull request in `openai/openai`. The researchers say they stopped at proof of access and did not read or dump private source code.
 
 ## Security implications
 
@@ -66,7 +68,7 @@ The final impact depended on the composition of these boundaries, not on `libhei
 
 - **Patch native dependencies.** Track OS-level libraries used by image-processing tools, including fixes that were not initially assigned a CVE.
 - **Sandbox image conversion.** Run decoders with a clean environment, restricted filesystem access, no unnecessary network access, and resource limits. Discourse later introduced [sandboxing for ImageMagick calls](https://github.com/discourse/discourse/commit/a07188016987de1613c961277e2e928aaa7c37ec).
-- **Scope Community sign-in tokens.** The failure was that tokens issued through OpenAI Community sign-in carried permissions that reached the user's ChatGPT and Codex APIs. Keep forum-login tokens limited to the forum's own sign-in needs; they must not grant ChatGPT/Codex API access. OpenAI said it narrowed these token permissions and revoked affected tokens and sessions.
+- **Scope Community sign-in tokens.** Reporting says Community sign-in tokens carried permissions reaching ChatGPT and Codex APIs. Keep forum-login tokens limited to forum authentication. OpenAI said it narrowed the permissions and revoked affected tokens and sessions; the public report does not fully explain how RCE was connected to token abuse.
 - **Restrict Codex's GitHub authority.** The employee's existing Codex connection could create a pull request in `openai/openai`. Limit connected-agent GitHub permissions to the repositories and operations required; protect internal branches with required review so an agent-authored PR cannot be merged solely on the strength of the compromised employee session.
 - **Rebuild affected deployments.** Discourse's [security advisory](https://github.com/discourse/discourse/security/advisories/GHSA-vhm9-85gw-x335) instructs self-hosted deployments to rebuild the container so patched OS packages are installed.
 
