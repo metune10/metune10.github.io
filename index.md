@@ -1,6 +1,6 @@
 ---
 layout: home
-title: "Security Research"
+title: "Security Research & Analysis"
 list_title: "Latest Research"
 ---
 
