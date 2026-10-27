@@ -21,14 +21,11 @@ On July 25, 2026, Hacktron chained a `libheif` heap overflow in OpenAI's communi
 
 ## 1. HEIF upload to native code execution
 
-Discourse normally inspected uploads with FastImage, which does not support HEIF. HEIC/HEIF uploads followed a separate path through ImageMagick to [libheif](https://github.com/strukturag/libheif):
+Discourse used FastImage for normal upload inspection, but HEIF/HEIC files followed a separate processing path:
 
-```text
-attacker-controlled HEIF
-  → Discourse upload handler
-  → ImageMagick magick
-  → libheif native decoder
-```
+1. **Upload:** Discourse receives the image.
+2. **Processing:** ImageMagick invokes [libheif](https://github.com/strukturag/libheif) to decode it.
+3. **Vulnerability:** The malformed image triggers a heap overflow in `libheif`.
 
 Hacktron reported that the Debian 12-based Discourse environment used `libheif` 1.19.7. An upstream change intended to correct overlay-overlap calculations had not been identified as a security fix, so the downstream package did not include it. The researchers traced the issue to signed overlay offsets being handled in unsigned arithmetic in [`HeifPixelImage::overlay()`](https://github.com/strukturag/libheif/blob/d506eac82a2e0359b6b6bc5b156fb8bd99d8f205/libheif/pixelimage.cc). A negative offset could wrap when converted to `uint32_t`, leaving an invalid width for the blend loop and causing out-of-bounds access.
 
