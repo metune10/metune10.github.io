@@ -17,7 +17,7 @@ On July 25, 2026, [Hacktron](https://www.hacktron.ai/blog/hacking-openai) report
 
 ## Attack path
 
-![Flow diagram showing a crafted HEIF upload leading through libheif heap corruption, forum code execution, an OpenAI SSO flaw, employee Codex impersonation, and an authorized GitHub integration to an internal pull request.](/assets/heif-heist-attack-flow.svg)
+![Flow diagram showing a crafted HEIF upload leading through libheif heap corruption, forum code execution, an OpenAI SSO flaw, employee Codex impersonation, and an authorized GitHub integration to an internal pull request.](/assets/heif-heist-attack-flow.svg?v=20261026-2)
 
 ## 1. HEIF upload to native code execution
 
