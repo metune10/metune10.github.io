@@ -13,7 +13,7 @@ tags:
 description: "How a HEIF parser heap overflow, an OpenAI SSO flaw, and an existing Codex integration combined into an internal repository action."
 ---
 
-On July 25, 2026, [Hacktron](https://www.hacktron.ai/blog/hacking-openai) reported a path from an image upload on OpenAI's community forum to a pull request in the internal `openai/openai` repository. The chain required **two independent vulnerabilities** and an existing GitHub authorization.
+On July 25, 2026, Hacktron chained a `libheif` heap overflow in OpenAI's community forum with a separate OpenAI SSO misconfiguration. The compromised identity had an existing Codex–GitHub connection, which the researchers used to open a pull request in `openai/openai`. [Hacktron's report](https://www.hacktron.ai/blog/hacking-openai) details the chain.
 
 ## Attack path
 
@@ -40,11 +40,9 @@ Hacktron first developed code execution with ASLR disabled, then adapted the exp
 
 The forum supported **Sign in with OpenAI** through `auth.openai.com`. Hacktron reports that a separate SSO flaw let control of an SSO-connected relying party become impersonation of active members' ChatGPT and Codex accounts.
 
-The SSO issue was an OpenAI-side misconfiguration: Community sign-in tokens carried excessive permissions that reached the associated users’ ChatGPT and Codex APIs. OpenAI later said it narrowed those permissions and revoked affected tokens and sessions. The public report does not explain the exact exploit primitive that connected forum RCE to account takeover, so the sequence below summarizes the reported trust-boundary failure rather than reconstructing the exploit.
+The OpenAI-side flaw was an SSO misconfiguration: tokens issued through Community sign-in carried excessive permissions, including access to the associated users' ChatGPT and Codex APIs. OpenAI said it narrowed those permissions and revoked affected tokens and sessions ([SecurityWeek](https://www.securityweek.com/AI-BUILT-EXPLOIT-AND-SIGN-IN-FLAW-OPENED-PATH-TO-INTERNAL-OPENAI-CODE/)).
 
-The reported issue was excessive permissions on tokens issued through Community sign-in. Those tokens could reach the associated users' ChatGPT and Codex APIs, turning compromise of an SSO-connected service into broader account access. OpenAI said it narrowed the token permissions and revoked affected tokens and sessions. See [SecurityWeek's report](https://www.securityweek.com/AI-BUILT-EXPLOIT-AND-SIGN-IN-FLAW-OPENED-PATH-TO-INTERNAL-OPENAI-CODE/).
-
-The public write-up does not explain the precise exploit primitive that connected forum RCE to account takeover. The chain below reflects the reported trust-boundary failure, not a full exploit reconstruction.
+Hacktron's public write-up does not detail the exact exploit primitive that connected forum RCE to account takeover. The sequence below captures the reported trust-boundary failure, not a full exploit reconstruction.
 
 ```text
 forum RCE
@@ -70,13 +68,14 @@ The final impact depended on the composition of these boundaries, not on `libhei
 
 - **Patch native dependencies.** Track OS-level libraries used by image-processing tools, including fixes that were not initially assigned a CVE.
 - **Sandbox image conversion.** Run decoders with a clean environment, restricted filesystem access, no unnecessary network access, and resource limits. Discourse later introduced [sandboxing for ImageMagick calls](https://github.com/discourse/discourse/commit/a07188016987de1613c961277e2e928aaa7c37ec).
-- **Scope Community sign-in tokens.** Reporting says Community sign-in tokens carried permissions reaching ChatGPT and Codex APIs. Keep forum-login tokens limited to forum authentication. OpenAI said it narrowed the permissions and revoked affected tokens and sessions; the public report does not fully explain how RCE was connected to token abuse.
+- **Scope Community sign-in tokens.** Forum-login tokens should authenticate users to the forum, not grant access to ChatGPT/Codex APIs. OpenAI said it narrowed these permissions and revoked affected tokens and sessions.
 - **Restrict Codex's GitHub authority.** The employee's existing Codex connection could create a pull request in `openai/openai`. Limit connected-agent GitHub permissions to the repositories and operations required; protect internal branches with required review so an agent-authored PR cannot be merged solely on the strength of the compromised employee session.
 - **Rebuild affected deployments.** Discourse's [security advisory](https://github.com/discourse/discourse/security/advisories/GHSA-vhm9-85gw-x335) instructs self-hosted deployments to rebuild the container so patched OS packages are installed.
 
 ## Further reading
 
 - [Hacktron: Hacking OpenAI](https://www.hacktron.ai/blog/hacking-openai)
+- [SecurityWeek: AI-Built Exploit and Sign-In Flaw Opened Path to Internal OpenAI Code](https://www.securityweek.com/AI-BUILT-EXPLOIT-AND-SIGN-IN-FLAW-OPENED-PATH-TO-INTERNAL-OPENAI-CODE/)
 - [libheif overlay calculation change](https://github.com/strukturag/libheif/commit/85e21ad44eba931314337300a2376b8d28f085ae)
 - [Discourse security advisory](https://github.com/discourse/discourse/security/advisories/GHSA-vhm9-85gw-x335)
 - [libheif CVE-2026-32882 advisory](https://github.com/strukturag/libheif/security/advisories/GHSA-hg7q-rjr2-8x46)
