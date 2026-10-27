@@ -41,12 +41,9 @@ The OpenAI-side flaw was an SSO misconfiguration: tokens issued through Communit
 
 **My hypothesis (not confirmed by the public reporting):** after gaining forum RCE, the researchers may have been able to interfere with the Community SSO flow or access SSO-related session/token material. If the resulting token was accepted by ChatGPT/Codex APIs because its permissions were too broad, that would explain how a forum compromise crossed into account access. The reports do not establish that they stole a token, nor do they identify the exact validation or authorization failure.
 
-```text
-forum RCE
-  → possible access to or abuse of Community SSO session/token flow
-  → over-permissioned token accepted by ChatGPT / Codex APIs
-  → employee account access
-```
+1. **Forum RCE:** The researchers gained code execution in Discourse.
+2. **Possible SSO access:** They may then have interfered with the Community sign-in flow or accessed related session/token material.
+3. **Over-permissioned token:** A token with broader-than-needed permissions may have enabled access to ChatGPT/Codex APIs and the employee's account.
 
 This is a plausible explanation of the trust-boundary failure, not a reconstruction of the exploit.
 The employee's Codex integration already had access to OpenAI's GitHub organization, which let the researchers open a PR in `openai/openai`. Hacktron said it stopped after demonstrating access. SecurityWeek reported that OpenAI's review found limited reads of private-repository metadata and commits, and that the submitted PR changed a README; OpenAI said access to Slack messages was not verified.
