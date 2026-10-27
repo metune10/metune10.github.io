@@ -42,15 +42,16 @@ The forum supported **Sign in with OpenAI** through `auth.openai.com`. Hacktron 
 
 The OpenAI-side flaw was an SSO misconfiguration: tokens issued through Community sign-in carried excessive permissions, including access to the associated users' ChatGPT and Codex APIs. OpenAI said it narrowed those permissions and revoked affected tokens and sessions ([SecurityWeek](https://www.securityweek.com/AI-BUILT-EXPLOIT-AND-SIGN-IN-FLAW-OPENED-PATH-TO-INTERNAL-OPENAI-CODE/)).
 
-Hacktron's public write-up does not detail the exact exploit primitive that connected forum RCE to account takeover. The sequence below captures the reported trust-boundary failure, not a full exploit reconstruction.
+**My hypothesis (not confirmed by the public reporting):** after gaining forum RCE, the researchers may have been able to interfere with the Community SSO flow or access SSO-related session/token material. If the resulting token was accepted by ChatGPT/Codex APIs because its permissions were too broad, that would explain how a forum compromise crossed into account access. The reports do not establish that they stole a token, nor do they identify the exact validation or authorization failure.
 
 ```text
 forum RCE
-  → Community SSO trust relationship
-  → over-permissioned sign-in token
-  → ChatGPT / Codex API access
+  → possible access to or abuse of Community SSO session/token flow
+  → over-permissioned token accepted by ChatGPT / Codex APIs
+  → employee account access
 ```
 
+This is a plausible explanation of the trust-boundary failure, not a reconstruction of the exploit.
 The employee's Codex integration already had access to OpenAI's GitHub organization, which let the researchers open a PR in `openai/openai`. Hacktron said it stopped after demonstrating access. SecurityWeek reported that OpenAI's review found limited reads of private-repository metadata and commits, and that the submitted PR changed a README; OpenAI said access to Slack messages was not verified.
 
 ## Security implications
