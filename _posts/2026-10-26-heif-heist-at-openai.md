@@ -42,16 +42,18 @@ The forum supported **Sign in with OpenAI** through `auth.openai.com`. Hacktron 
 
 The SSO issue was an OpenAI-side misconfiguration: Community sign-in tokens carried excessive permissions that reached the associated users’ ChatGPT and Codex APIs. OpenAI later said it narrowed those permissions and revoked affected tokens and sessions. The public report does not explain the exact exploit primitive that connected forum RCE to account takeover, so the sequence below summarizes the reported trust-boundary failure rather than reconstructing the exploit.
 
-If the compromised forum could influence the OpenAI sign-in flow, the separate flaw may have allowed tokens issued for Community sign-in—or the authorization associated with them—to reach beyond forum authentication. Reporting says those tokens had permissions that reached the users' ChatGPT and Codex APIs. The missing detail is how the researchers turned control of the forum into usable access to those tokens or permissions; the public write-up does not establish that step.
+The reported issue was excessive permissions on tokens issued through Community sign-in. Those tokens could reach the associated users' ChatGPT and Codex APIs, turning compromise of an SSO-connected service into broader account access. OpenAI said it narrowed the token permissions and revoked affected tokens and sessions. See [SecurityWeek's report](https://www.securityweek.com/AI-BUILT-EXPLOIT-AND-SIGN-IN-FLAW-OPENED-PATH-TO-INTERNAL-OPENAI-CODE/).
+
+The public write-up does not explain the precise exploit primitive that connected forum RCE to account takeover. The chain below reflects the reported trust-boundary failure, not a full exploit reconstruction.
 
 ```text
-forum code execution
-  → possible abuse of the Community SSO flow
-  → separate token / authorization flaw
-  → employee ChatGPT/Codex account access
+forum RCE
+  → Community SSO trust relationship
+  → over-permissioned sign-in token
+  → ChatGPT / Codex API access
 ```
 
-This is an inference from the reported token-permission issue, not proof that RCE directly exposed a token. The employee's Codex account already had authorized access to OpenAI's GitHub organization. Hacktron used that existing integration to have Codex open a harmless pull request in `openai/openai`. The researchers say they stopped at proof of access and did not read or dump private source code.
+The employee's Codex integration already had access to OpenAI's GitHub organization, which let the researchers open a PR in `openai/openai`. Hacktron said it stopped after demonstrating access. SecurityWeek reported that OpenAI's review found limited reads of private-repository metadata and commits, and that the submitted PR changed a README; OpenAI said access to Slack messages was not verified.
 
 ## Security implications
 
@@ -59,7 +61,7 @@ Each stage added a capability that the previous stage did not provide on its own
 
 - **Parser flaw:** attacker-controlled image data reached a vulnerable native decoder.
 - **Forum RCE:** the decoder compromise became code execution in the Discourse environment.
-- **SSO flaw:** control of the relying party crossed into employee identity.
+- **SSO flaw:** over-permissioned Community sign-in tokens exposed ChatGPT/Codex APIs beyond forum authentication.
 - **Existing integration:** the compromised identity's authorized Codex connection enabled a repository action.
 
 The final impact depended on the composition of these boundaries, not on `libheif` alone.
