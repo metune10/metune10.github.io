@@ -1,44 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="610" viewBox="0 0 1000 610" role="img" aria-labelledby="title desc">
-  <title id="title">HEIF Heist attack path</title>
-  <desc id="desc">A crafted HEIF image triggers a libheif heap overflow and forum code execution. A separate SSO flaw enables employee account impersonation, and an existing Codex GitHub integration allows an internal pull request.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" role="img" aria-labelledby="title desc">
+  <title id="title">HEIF Heist: attack chain and trust boundaries</title>
+  <desc id="desc">A crafted HEIF upload triggers a libheif heap overflow and remote code execution on the Discourse forum. That foothold is then combined with a separate OpenAI SSO misconfiguration involving over-privileged community sign-in tokens to take over an employee's ChatGPT and Codex accounts. The employee's pre-existing Codex GitHub integration is then used to open an internal pull request.</desc>
   <defs>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#5b6472"/></marker>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#596579"/></marker>
     <style>
-      .node { fill:#f7f8fa; stroke:#697586; stroke-width:1.5; }
-      .vuln { fill:#fff0e8; stroke:#bd5b28; stroke-width:1.8; }
+      .node { fill:#f5f7fa; stroke:#64748b; stroke-width:1.6; }
+      .vuln { fill:#fff0e8; stroke:#b4532a; stroke-width:1.8; }
       .auth { fill:#edf4ff; stroke:#3768a6; stroke-width:1.8; }
       .result { fill:#eaf7ef; stroke:#347a50; stroke-width:1.8; }
-      .heading { font: 600 17px system-ui, sans-serif; fill:#182230; text-anchor:middle; }
-      .detail { font: 14px system-ui, sans-serif; fill:#3d4755; text-anchor:middle; }
-      .edge { stroke:#5b6472; stroke-width:2; fill:none; marker-end:url(#arrow); }
-      .label { font: 13px system-ui, sans-serif; fill:#596273; }
+      .heading { font: 600 18px system-ui, sans-serif; fill:#182230; text-anchor:middle; }
+      .detail { font: 14px system-ui, sans-serif; fill:#374151; text-anchor:middle; }
+      .edge { stroke:#596579; stroke-width:2.2; fill:none; marker-end:url(#arrow); }
+      .label { font: 14px system-ui, sans-serif; font-weight:600; fill:#4b5563; text-anchor:middle; }
+      .sub { font: 13px system-ui, sans-serif; fill:#5b6472; text-anchor:middle; }
     </style>
   </defs>
-  <rect x="20" y="20" width="960" height="570" rx="18" fill="#ffffff" stroke="#d9dee7"/>
-  <text x="500" y="54" class="heading" font-size="20">From image upload to repository action</text>
-  <rect x="65" y="92" width="250" height="76" rx="12" class="node"/>
-  <text x="190" y="122" class="heading">Crafted HEIF upload</text><text x="190" y="145" class="detail">Untrusted image container</text>
-  <path d="M315 130 H365" class="edge"/>
-  <rect x="370" y="92" width="260" height="76" rx="12" class="vuln"/>
-  <text x="500" y="122" class="heading">libheif heap overflow</text><text x="500" y="145" class="detail">Malformed overlay offsets</text>
-  <path d="M630 130 H680" class="edge"/>
-  <rect x="685" y="92" width="250" height="76" rx="12" class="vuln"/>
-  <text x="810" y="122" class="heading">Forum code execution</text><text x="810" y="145" class="detail">Discourse environment</text>
-  <path d="M810 168 V220 H690" class="edge"/>
-  <text x="738" y="207" class="label">identity boundary</text>
-  <rect x="435" y="235" width="250" height="76" rx="12" class="vuln"/>
-  <text x="560" y="265" class="heading">OpenAI SSO flaw</text><text x="560" y="288" class="detail">Relying-party compromise</text>
-  <path d="M435 273 H365" class="edge"/>
-  <rect x="75" y="235" width="285" height="76" rx="12" class="auth"/>
-  <text x="217" y="265" class="heading">Employee identity</text><text x="217" y="288" class="detail">ChatGPT / Codex impersonation</text>
-  <path d="M217 311 V365" class="edge"/>
-  <text x="230" y="344" class="label">existing authorization</text>
-  <rect x="75" y="370" width="285" height="76" rx="12" class="auth"/>
-  <text x="217" y="400" class="heading">Codex GitHub integration</text><text x="217" y="423" class="detail">Pre-existing organization access</text>
-  <path d="M360 408 H435" class="edge"/>
-  <rect x="440" y="370" width="280" height="76" rx="12" class="result"/>
-  <text x="580" y="400" class="heading">Internal pull request</text><text x="580" y="423" class="detail">Proof of repository access</text>
-  <rect x="75" y="490" width="850" height="55" rx="10" fill="#f3f5f8" stroke="#d9dee7"/>
-  <text x="500" y="513" class="heading">Three distinct boundaries</text>
-  <text x="500" y="533" class="detail">Native parser safety • SSO identity trust • authorized repository actions</text>
+  <rect x="20" y="20" width="960" height="720" rx="18" fill="#ffffff" stroke="#d9dee7"/>
+  <text x="500" y="55" class="heading" font-size="21">From HEIF upload to internal repository action</text>
+  <rect x="65" y="85" width="250" height="72" rx="12" class="node"/>
+  <text x="190" y="113" class="heading">Crafted HEIF upload</text><text x="190" y="136" class="detail">Attacker-controlled file</text>
+  <path d="M315 121 H365" class="edge"/>
+  <rect x="370" y="85" width="260" height="72" rx="12" class="vuln"/>
+  <text x="500" y="113" class="heading">libheif heap overflow</text><text x="500" y="136" class="detail">Malformed overlay offsets</text>
+  <path d="M630 121 H680" class="edge"/>
+  <rect x="685" y="85" width="250" height="72" rx="12" class="vuln"/>
+  <text x="810" y="113" class="heading">Forum RCE</text><text x="810" y="136" class="detail">Code execution in Discourse</text>
+
+  <path d="M810 157 V190" class="edge"/>
+  <text x="810" y="180" class="label">initial foothold only</text>
+
+  <rect x="285" y="200" width="650" height="112" rx="12" class="vuln"/>
+  <text x="610" y="229" class="heading">Separate OpenAI SSO misconfiguration</text>
+  <text x="610" y="254" class="detail">Community sign-in tokens had excessive permissions</text>
+  <text x="610" y="277" class="detail">The identity flaw—not RCE alone—enabled account takeover</text>
+  <text x="610" y="298" class="sub">Exact exploit mechanics are not fully detailed in the public report</text>
+
+  <path d="M610 312 V345" class="edge"/>
+  <text x="730" y="335" class="label">crosses identity boundary</text>
+  <rect x="285" y="350" width="650" height="76" rx="12" class="auth"/>
+  <text x="610" y="379" class="heading">Employee ChatGPT / Codex account takeover</text>
+  <text x="610" y="402" class="detail">Identity and session authority of an active forum member</text>
+
+  <path d="M610 426 V459" class="edge"/>
+  <text x="730" y="449" class="label">existing authorization</text>
+  <rect x="285" y="464" width="650" height="76" rx="12" class="auth"/>
+  <text x="610" y="493" class="heading">Pre-existing Codex ↔ GitHub integration</text>
+  <text x="610" y="516" class="detail">Employee's authorized access to OpenAI's GitHub organization</text>
+
+  <path d="M610 540 V573" class="edge"/>
+  <rect x="285" y="578" width="650" height="76" rx="12" class="result"/>
+  <text x="610" y="607" class="heading">Internal pull request</text>
+  <text x="610" y="630" class="detail">Harmless proof of access in openai/openai</text>
+
+  <rect x="65" y="675" width="870" height="42" rx="9" fill="#f3f5f8" stroke="#d9dee7"/>
+  <text x="500" y="701" class="detail">Three separate boundaries: native parsing • SSO identity • delegated GitHub authorization</text>
 </svg>
