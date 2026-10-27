@@ -40,7 +40,7 @@ Hacktron first developed code execution with ASLR disabled, then adapted the exp
 
 The forum supported **Sign in with OpenAI** through `auth.openai.com`. Hacktron reports that a separate SSO flaw let control of an SSO-connected relying party become impersonation of active members' ChatGPT and Codex accounts.
 
-The public report does not disclose the exact SSO exploit, so the mechanism below is a **plausible interpretation, not a confirmed reconstruction**.
+The SSO issue was an OpenAI-side misconfiguration: Community sign-in tokens carried excessive permissions that reached the associated users’ ChatGPT and Codex APIs. OpenAI later said it narrowed those permissions and revoked affected tokens and sessions. The public report does not explain the exact exploit primitive that connected forum RCE to account takeover, so the sequence below summarizes the reported trust-boundary failure rather than reconstructing the exploit.
 
 If the compromised forum could influence the OpenAI sign-in flow, the separate flaw may have allowed tokens issued for Community sign-in—or the authorization associated with them—to reach beyond forum authentication. Reporting says those tokens had permissions that reached the users' ChatGPT and Codex APIs. The missing detail is how the researchers turned control of the forum into usable access to those tokens or permissions; the public write-up does not establish that step.
 
