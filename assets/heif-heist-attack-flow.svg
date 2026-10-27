@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1000" height="760" viewBox="0 0 1000 760" role="img" aria-labelledby="title desc">
   <title id="title">HEIF Heist: attack chain and trust boundaries</title>
-  <desc id="desc">A crafted HEIF upload triggers a libheif heap overflow and remote code execution on the Discourse forum. That foothold is then combined with a separate OpenAI SSO misconfiguration involving over-privileged community sign-in tokens to take over an employee's ChatGPT and Codex accounts. The employee's pre-existing Codex GitHub integration is then used to open an internal pull request.</desc>
+  <desc id="desc">A crafted HEIF upload triggers a libheif heap overflow and remote code execution on the Discourse forum. The compromised forum is the foothold for exploiting a separate OpenAI SSO misconfiguration involving over-privileged community sign-in tokens. That identity flaw enables employee ChatGPT and Codex account takeover. The employee's pre-existing Codex GitHub integration is then used to open an internal pull request.</desc>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#596579"/></marker>
     <style>
@@ -27,22 +27,22 @@
   <text x="810" y="113" class="heading">Forum RCE</text><text x="810" y="136" class="detail">Code execution in Discourse</text>
 
   <path d="M810 157 V190" class="edge"/>
-  <text x="810" y="180" class="label">initial foothold only</text>
+  <text x="805" y="180" class="label">compromised relying party</text>
 
   <rect x="285" y="200" width="650" height="112" rx="12" class="vuln"/>
   <text x="610" y="229" class="heading">Separate OpenAI SSO misconfiguration</text>
   <text x="610" y="254" class="detail">Community sign-in tokens had excessive permissions</text>
-  <text x="610" y="277" class="detail">The identity flaw—not RCE alone—enabled account takeover</text>
-  <text x="610" y="298" class="sub">Exact exploit mechanics are not fully detailed in the public report</text>
+  <text x="610" y="277" class="detail">This separate identity flaw enabled account takeover</text>
+  <text x="610" y="298" class="sub">RCE alone did not grant ChatGPT or Codex account access</text>
 
   <path d="M610 312 V345" class="edge"/>
-  <text x="730" y="335" class="label">crosses identity boundary</text>
+  <text x="755" y="335" class="label">identity boundary crossed</text>
   <rect x="285" y="350" width="650" height="76" rx="12" class="auth"/>
   <text x="610" y="379" class="heading">Employee ChatGPT / Codex account takeover</text>
-  <text x="610" y="402" class="detail">Identity and session authority of an active forum member</text>
+  <text x="610" y="402" class="detail">Authority of an active forum member's OpenAI identity</text>
 
   <path d="M610 426 V459" class="edge"/>
-  <text x="730" y="449" class="label">existing authorization</text>
+  <text x="748" y="449" class="label">pre-existing authorization</text>
   <rect x="285" y="464" width="650" height="76" rx="12" class="auth"/>
   <text x="610" y="493" class="heading">Pre-existing Codex ↔ GitHub integration</text>
   <text x="610" y="516" class="detail">Employee's authorized access to OpenAI's GitHub organization</text>
