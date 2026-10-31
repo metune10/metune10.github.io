@@ -128,6 +128,11 @@ Use harmless fixtures in staging to verify these controls:
 
 Monitor unexpected outbound requests, file access, credential retrieval, plugin or user changes, and unusual Kubernetes API calls. Correlate events across systems; individually ordinary requests can form a meaningful attack path.
 
+
+### Agent Boundary Prober
+
+I built [Agent Boundary Prober](https://github.com/metune10/agent-boundary-prober) as a local, policy-driven foundation for this kind of review. **Phase 1 validates YAML assertions and evaluates supplied observations and evidence; it does not run live probes, make network or Kubernetes API calls, inspect secrets, or verify a running cluster.** Active inventory collection and controlled-canary tests are separate future phases requiring explicit authorization.
+
 ## Patch status
 
 The [Hugging Face disclosure](https://huggingface.co/blog/security-incident-july-2026) and [technical timeline](https://huggingface.co/blog/agent-intrusion-technical-timeline) describe closing the dataset-processing paths, rotating credentials, rebuilding compromised nodes, restricting metadata-service access, and tightening cluster controls. The timeline says the renderer no longer evaluates template expressions in data fields or processes HDF5 external references.
